@@ -2,27 +2,27 @@ import requests
 import time
 
 def fetch_cves_for_package(package_name):
-    # URL da API da NVD para CVE (versão 2.0)
+    # NVD API URL for CVE (version 2.0)
     url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
     
-    # Parâmetros da consulta
+    # Search parameters
     params = {
-        "keywordSearch": package_name,  # Filtrar por palavra-chave (nome do pacote)
-        "resultsPerPage": 5  # Quantidade de CVEs retornadas
+        "keywordSearch": package_name,  # Filter by keyword (package name)
+        "resultsPerPage": 5  # Number of returned CVE's
     }
     
     try:
-        # Faz a requisição à API
+        # Make the request to the API
         response = requests.get(url, params=params)
         response.raise_for_status()  # Verifica se a requisição foi bem-sucedida
         
-        # Converte a resposta para JSON
+        # Convert response to JSON
         data = response.json()
         
-        # Filtra os CVEs que estão relacionados ao pacote
+        # Filter CVE's related to the searched package
         cves = data.get('vulnerabilities', [])
         
-        # Exibe os CVEs encontrados
+        # Show found CVE's
         for cve in cves:
             cve_data = cve['cve']
             cve_id = cve_data['id']
@@ -31,7 +31,7 @@ def fetch_cves_for_package(package_name):
             print(f"\n🔍 CVE ID: {cve_id}")
             print(f"📌 Description: {description}")
             
-            # Acessando CPE
+            # Acessing CPE
             configurations = cve_data.get('configurations', [])
             if configurations:
                 print("🛠️ CPE Information:")
@@ -43,13 +43,13 @@ def fetch_cves_for_package(package_name):
                 print("❌ No CPE information available")
             
             print("-" * 60)
-            time.sleep(1)  # Pequeno delay para evitar bloqueios da API
+            #time.sleep(1)  # Small delay to avoid being blocked from the API
     
     except requests.exceptions.HTTPError as e:
-        print(f"❌ Erro HTTP: {e}")
+        print(f"❌ HTTP Error: {e}")
     except requests.exceptions.RequestException as e:
-        print(f"❌ Erro na requisição: {e}")
+        print(f"❌ Error on request: {e}")
 
 if __name__ == "__main__":
-    package_name = "linux"  # Nome do pacote que você quer pesquisar
+    package_name = "linux"  # Name of the package that we wish to search for
     fetch_cves_for_package(package_name)

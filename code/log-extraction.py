@@ -3,26 +3,42 @@ from datetime import datetime
 from collections import defaultdict
 
 class DpkgLogParser:
-    def __init__(self, log_path="resources/dpkg.log"):
+    def __init__(self, log_path):
         self.log_path = log_path
         self.entries = []
         self.parse_log()
 
     def parse_log(self):
-        pattern = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\S+) (\S+): (\S+)")
+        fpattern = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\S+) (\S+):(\S+) (\S+)")
+        spattern = re.compile(r"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}) (\S+) (\S+) (\S+):(\S+) (\S+)")
         try:
             with open(self.log_path, "r", encoding="utf-8") as log_file:
                 for line in log_file:
-                    match = pattern.match(line)
+                    match = fpattern.match(line)
                     if match:
-                        date, time, process, action, package = match.groups()
+                        date, time, action, package_name, package_arch, version = match.groups()
                         timestamp = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M:%S")
                         self.entries.append({
                             "timestamp": timestamp,
-                            "process": process,
                             "action": action,
-                            "package": package,
+                            "package_name": package_name,
+                            "package_arch": package_arch,
+                            "version": version
                         })
+                    else:
+                        smatch = spattern.match(line)
+                        if smatch:
+                            date, time, action, state, package_name, package_arch, version = smatch.groups()
+                            timestamp = datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M:%S")
+                            self.entries.append({
+                                "timestamp": timestamp,
+                                "action": action,
+                                "state": state,
+                                "package_name": package_name,
+                                "package_arch": package_arch,
+                                "version": version
+                            })    
+                    
         except FileNotFoundError:
             print(f"Error: Log file '{self.log_path}' not found.")
 
@@ -41,4 +57,4 @@ class DpkgLogParser:
 if __name__ == "__main__":
     parser = DpkgLogParser("dpkg.log")
     print("Summary of actions:", parser.get_summary())
-    print("Installed packages:", parser.get_entries("install"))
+    print("Removed packages:", parser.get_entries("remove"))

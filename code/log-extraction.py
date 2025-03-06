@@ -1,4 +1,5 @@
 import re
+import os
 from datetime import datetime
 from collections import defaultdict
 
@@ -55,6 +56,7 @@ class DpkgLogParser:
 
 # Example usage
 if __name__ == "__main__":
-    parser = DpkgLogParser("dpkg.log")
+    logPath = "../resources/dpkg.log"
+    parser = DpkgLogParser(logPath)
     print("Summary of actions:", parser.get_summary())
     print("Removed packages:", parser.get_entries("remove"))

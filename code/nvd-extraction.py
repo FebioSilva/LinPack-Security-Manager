@@ -1,34 +1,34 @@
 import requests
 
 def fetch_cves_for_package(package_name):
-    # URL da API da NVD para CVE (versão 2.0)
+    # NVD API URL for CVE (version 2.0)
     url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
     
-    # Parâmetros da consulta
+    # Search parameters
     params = {
-        "keywordSearch": package_name,  # Filtrar por palavra-chave (nome do pacote)
-        "resultsPerPage": 50  # Quantidade de CVEs retornadas
+        "keywordSearch": package_name,  # Filter for keyword (package name)
+        "resultsPerPage": 50  # Number of returned CVEs
     }
     
     try:
-        # Faz a requisição à API
+        # Make a request to the API
         response = requests.get(url, params=params)
-        response.raise_for_status()  # Verifica se a requisição foi bem-sucedida
+        response.raise_for_status()  # Verify if the request was successful
         
-        # Converte a resposta para JSON
+        # Convert to JSON
         data = response.json()
         
-        # Filtra os CVEs que estão relacionados ao pacote
+        # Filter CVE's that are related to the searched package
         cves = data.get('vulnerabilities', [])
         
-        # Lista para armazenar os objetos de CVE
+        # List to store CVE objects
         cve_objects = []
         
-        # Exibe os CVEs encontrados
+        # Show found CVE's
         for cve in cves:
             cve_data = cve['cve']
             
-            # Extrai as informações
+            # Extract the information
             cve_id = cve_data['id']
             description = cve_data['descriptions'][0]['value']
 
@@ -41,7 +41,7 @@ def fetch_cves_for_package(package_name):
             }
             references = cve_data['references']
             
-            # Acessando CPE
+            # Access CPE
             configurations = cve_data.get('configurations', [])
             cpe_list = []
             if configurations:
@@ -62,7 +62,7 @@ def fetch_cves_for_package(package_name):
                             "other": cpe_parts[12] if len(cpe_parts) > 12 else None
                         })
             
-            # Cria o objeto CVE com as propriedades extraídas
+            # Create the CVE object
             cve_object = {
                 "id": cve_id,
                 "description": description,
@@ -71,10 +71,10 @@ def fetch_cves_for_package(package_name):
                 "cpe": cpe_list
             }
             
-            # Adiciona o objeto à lista
+            # Add the object to the list
             cve_objects.append(cve_object)
         
-        # Retorna a lista de objetos CVE
+        # Return the CVE objects list
         return cve_objects
     
     except requests.exceptions.HTTPError as e:
@@ -83,9 +83,9 @@ def fetch_cves_for_package(package_name):
         print(f"❌ Erro na requisição: {e}")
 
 if __name__ == "__main__":
-    package_name = "linux"  # Nome do pacote que você quer pesquisar
+    package_name = "linux"  # Name of the to be searched package
     cves = fetch_cves_for_package(package_name)
     
-    # Exibe os objetos CVE
+    # Show CVE objects
     for cve in cves:
         print(cve)

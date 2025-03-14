@@ -31,10 +31,14 @@ def fetch_cves_for_package(package_name):
             # Extrai as informações
             cve_id = cve_data['id']
             description = cve_data['descriptions'][0]['value']
-            cvssVersion = cve_data['metrics']['cvssMetricV2'][0]['cvssData']['version']
-            baseScore = cve_data['metrics']['cvssMetricV2'][0]['cvssData']['baseScore']
-            baseSeverity = cve_data['metrics']['cvssMetricV2'][0]['baseSeverity']
-            cvssCode = cve_data['metrics']['cvssMetricV2'][0]['cvssData']['vectorString']
+
+            cvss_data = cve_data.get('metrics', {}).get('cvssMetricV2', [{}])[0].get('cvssData', {})
+            severity = {
+                "cvssVersion": cvss_data.get('version'),
+                "baseScore": cvss_data.get('baseScore'),
+                "baseSeverity": cve_data.get('metrics', {}).get('cvssMetricV2', [{}])[0].get('baseSeverity'),
+                "cvssCode": cvss_data.get('vectorString')
+            }
             references = cve_data['references']
             
             # Acessando CPE
@@ -43,18 +47,26 @@ def fetch_cves_for_package(package_name):
             if configurations:
                 for node in configurations[0]['nodes']:
                     for cpe_match in node['cpeMatch']:
-                        cpe_list.append(cpe_match['criteria'])
+                        cpe_parts = cpe_match.get('criteria', '').split(':')
+                        cpe_list.append({
+                            "part": cpe_parts[1] if len(cpe_parts) > 1 else None,
+                            "vendor": cpe_parts[3] if len(cpe_parts) > 3 else None,
+                            "product": cpe_parts[4] if len(cpe_parts) > 4 else None,
+                            "version": cpe_parts[5] if len(cpe_parts) > 5 else None,
+                            "update": cpe_parts[6] if len(cpe_parts) > 6 else None,
+                            "edition": cpe_parts[7] if len(cpe_parts) > 7 else None,
+                            "language": cpe_parts[8] if len(cpe_parts) > 8 else None,
+                            "sw_edition": cpe_parts[9] if len(cpe_parts) > 9 else None,
+                            "target_sw": cpe_parts[10] if len(cpe_parts) > 10 else None,
+                            "target_hw": cpe_parts[11] if len(cpe_parts) > 11 else None,
+                            "other": cpe_parts[12] if len(cpe_parts) > 12 else None
+                        })
             
             # Cria o objeto CVE com as propriedades extraídas
             cve_object = {
                 "id": cve_id,
                 "description": description,
-                "severity": {
-                    "cvssVersion": cvssVersion,
-                    "baseScore": baseScore,
-                    "baseSeverity": baseSeverity,
-                    "cvssCode": cvssCode
-                },
+                "severity": severity,
                 "references": references,
                 "cpe": cpe_list
             }

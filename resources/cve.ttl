@@ -19,107 +19,124 @@
 #    Object Properties
 #################################################################
 
-###  http://purl.org/cyber/cve#cveObjectProperty
-cve:cveObjectProperty rdf:type owl:ObjectProperty .
+###  http://purl.org/cyber/cve#has_affected_product
+cve:has_affected_product rdf:type owl:ObjectProperty ;
+                         rdfs:subPropertyOf owl:topObjectProperty ;
+                         owl:inverseOf cve:has_cve ;
+                         rdfs:domain cve:CVE ;
+                         rdfs:range cve:Product .
 
 
-###  http://purl.org/cyber/cve#hasAffectedProduct
-cve:hasAffectedProduct rdf:type owl:ObjectProperty ;
-                       rdfs:subPropertyOf cve:cveObjectProperty ;
-                       owl:inverseOf cve:hasCVE ;
-                       rdfs:domain cve:CVE ;
-                       rdfs:range cve:Product .
+###  http://purl.org/cyber/cve#has_attacker
+cve:has_attacker rdf:type owl:ObjectProperty ;
+                 rdfs:subPropertyOf owl:topObjectProperty .
 
 
-###  http://purl.org/cyber/cve#hasAttacker
-cve:hasAttacker rdf:type owl:ObjectProperty ;
-                rdfs:subPropertyOf cve:cveObjectProperty .
+###  http://purl.org/cyber/cve#has_cve
+cve:has_cve rdf:type owl:ObjectProperty ;
+            rdfs:subPropertyOf owl:topObjectProperty ;
+            rdfs:domain cve:Product ;
+            rdfs:range cve:CVE .
 
 
-###  http://purl.org/cyber/cve#hasCVE
-cve:hasCVE rdf:type owl:ObjectProperty ;
-           rdfs:subPropertyOf cve:cveObjectProperty ;
-           rdfs:domain cve:Product ;
-           rdfs:range cve:CVE .
+###  http://purl.org/cyber/cve#has_product
+cve:has_product rdf:type owl:ObjectProperty ;
+                rdfs:subPropertyOf owl:topObjectProperty ;
+                owl:inverseOf cve:has_vendor ;
+                rdfs:domain cve:Vendor ;
+                rdfs:range cve:Product .
 
 
-###  http://purl.org/cyber/cve#hasProduct
-cve:hasProduct rdf:type owl:ObjectProperty ;
-               rdfs:subPropertyOf cve:cveObjectProperty ;
-               owl:inverseOf cve:hasVendor ;
-               rdfs:domain cve:Vendor ;
-               rdfs:range cve:Product .
+###  http://purl.org/cyber/cve#has_references
+cve:has_references rdf:type owl:ObjectProperty ;
+                   rdfs:subPropertyOf owl:topObjectProperty ;
+                   rdfs:domain cve:CVE ;
+                   rdfs:range cve:References .
 
 
-###  http://purl.org/cyber/cve#hasReferences
-cve:hasReferences rdf:type owl:ObjectProperty ;
-                  rdfs:subPropertyOf cve:cveObjectProperty ;
-                  rdfs:domain cve:CVE ;
-                  rdfs:range cve:References .
+###  http://purl.org/cyber/cve#has_vendor
+cve:has_vendor rdf:type owl:ObjectProperty ;
+               rdfs:subPropertyOf owl:topObjectProperty ;
+               rdfs:domain cve:Product ;
+               rdfs:range cve:Vendor .
 
 
-###  http://purl.org/cyber/cve#hasVendor
-cve:hasVendor rdf:type owl:ObjectProperty ;
-              rdfs:subPropertyOf cve:cveObjectProperty ;
-              rdfs:domain cve:Product ;
-              rdfs:range cve:Vendor .
-
-
-###  http://purl.org/cyber/cve#hasVulnerability
-cve:hasVulnerability rdf:type owl:ObjectProperty ;
-                     rdfs:subPropertyOf cve:cveObjectProperty .
+###  http://purl.org/cyber/cve#has_vulnerability
+cve:has_vulnerability rdf:type owl:ObjectProperty ;
+                      rdfs:subPropertyOf owl:topObjectProperty .
 
 
 #################################################################
 #    Data properties
 #################################################################
 
-###  http://purl.org/cyber/cve#cveDataProperty
-cve:cveDataProperty rdf:type owl:DatatypeProperty .
+###  http://purl.org/cyber/cve#base_score
+cve:base_score rdf:type owl:DatatypeProperty ;
+               rdfs:subPropertyOf owl:topDataProperty .
+
+
+###  http://purl.org/cyber/cve#base_severity
+cve:base_severity rdf:type owl:DatatypeProperty ;
+                  rdfs:subPropertyOf owl:topDataProperty .
+
+
+###  http://purl.org/cyber/cve#cvss_code
+cve:cvss_code rdf:type owl:DatatypeProperty ;
+              rdfs:subPropertyOf owl:topDataProperty .
+
+
+###  http://purl.org/cyber/cve#cvss_version
+cve:cvss_version rdf:type owl:DatatypeProperty ;
+                 rdfs:subPropertyOf owl:topDataProperty .
 
 
 ###  http://purl.org/cyber/cve#description
 cve:description rdf:type owl:DatatypeProperty ;
-                rdfs:subPropertyOf cve:cveDataProperty ;
+                rdfs:subPropertyOf owl:topDataProperty ;
                 rdfs:domain cve:CVE .
 
 
-###  http://purl.org/cyber/cve#productCPE
-cve:productCPE rdf:type owl:DatatypeProperty ;
-               rdfs:subPropertyOf cve:cveDataProperty ;
-               rdfs:domain cve:Product .
-
-
-###  http://purl.org/cyber/cve#productName
-cve:productName rdf:type owl:DatatypeProperty ;
-                rdfs:subPropertyOf cve:cveDataProperty ;
+###  http://purl.org/cyber/cve#product_cpe
+cve:product_cpe rdf:type owl:DatatypeProperty ;
+                rdfs:subPropertyOf owl:topDataProperty ;
                 rdfs:domain cve:Product .
 
 
-###  http://purl.org/cyber/cve#refname
-cve:refname rdf:type owl:DatatypeProperty ;
-            rdfs:subPropertyOf cve:cveDataProperty ;
-            rdfs:domain cve:References ;
-            rdfs:range rdfs:Literal .
+###  http://purl.org/cyber/cve#product_name
+cve:product_name rdf:type owl:DatatypeProperty ;
+                 rdfs:subPropertyOf owl:topDataProperty ;
+                 rdfs:domain cve:Product .
 
 
-###  http://purl.org/cyber/cve#refsource
-cve:refsource rdf:type owl:DatatypeProperty ;
-              rdfs:subPropertyOf cve:cveDataProperty ;
-              rdfs:domain cve:References ;
-              rdfs:range rdfs:Literal .
+###  http://purl.org/cyber/cve#product_version
+cve:product_version rdf:type owl:DatatypeProperty ;
+                    rdfs:subPropertyOf owl:topDataProperty .
+
+
+###  http://purl.org/cyber/cve#ref_name
+cve:ref_name rdf:type owl:DatatypeProperty ;
+             rdfs:subPropertyOf owl:topDataProperty ;
+             rdfs:domain cve:References ;
+             rdfs:range rdfs:Literal .
+
+
+###  http://purl.org/cyber/cve#ref_source
+cve:ref_source rdf:type owl:DatatypeProperty ;
+               rdfs:subPropertyOf owl:topDataProperty ;
+               rdfs:domain cve:References ;
+               rdfs:range rdfs:Literal .
 
 
 ###  http://purl.org/cyber/cve#url
 cve:url rdf:type owl:DatatypeProperty ;
-        rdfs:subPropertyOf cve:cveDataProperty ;
+        rdfs:subPropertyOf owl:topDataProperty ;
         rdfs:domain cve:References ;
         rdfs:range rdfs:Literal .
 
 
-###  http://purl.org/cyber/cve#vendorName
-cve:vendorName rdf:type owl:DatatypeProperty ;
-               rdfs:subPropertyOf cve:cveDataProperty .
+###  http://purl.org/cyber/cve#vendor_name
+cve:vendor_name rdf:type owl:DatatypeProperty ;
+                rdfs:subPropertyOf owl:topDataProperty .
 
 
 #################################################################
@@ -133,7 +150,40 @@ cve:Attacker rdf:type owl:Class ;
 
 ###  http://purl.org/cyber/cve#CVE
 cve:CVE rdf:type owl:Class ;
-        rdfs:subClassOf cve:CVEThing .
+        rdfs:subClassOf cve:CVEThing ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:has_affected_product ;
+                          owl:someValuesFrom cve:Product
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:has_references ;
+                          owl:someValuesFrom cve:References
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:base_score ;
+                          owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                          owl:onDataRange xsd:double
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:base_severity ;
+                          owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                          owl:onDataRange xsd:string
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:cvss_code ;
+                          owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                          owl:onDataRange xsd:string
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:cvss_version ;
+                          owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                          owl:onDataRange xsd:string
+                        ] ,
+                        [ rdf:type owl:Restriction ;
+                          owl:onProperty cve:description ;
+                          owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                          owl:onDataRange xsd:string
+                        ] .
 
 
 ###  http://purl.org/cyber/cve#CVEThing
@@ -142,17 +192,65 @@ cve:CVEThing rdf:type owl:Class .
 
 ###  http://purl.org/cyber/cve#Product
 cve:Product rdf:type owl:Class ;
-            rdfs:subClassOf cve:CVEThing .
+            rdfs:subClassOf cve:CVEThing ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty cve:has_cve ;
+                              owl:someValuesFrom cve:CVE
+                            ] ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty cve:has_vendor ;
+                              owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                              owl:onClass cve:Vendor
+                            ] ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty cve:product_cpe ;
+                              owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                              owl:onDataRange xsd:string
+                            ] ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty cve:product_name ;
+                              owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                              owl:onDataRange xsd:string
+                            ] ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty cve:product_version ;
+                              owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                              owl:onDataRange xsd:string
+                            ] .
 
 
 ###  http://purl.org/cyber/cve#References
 cve:References rdf:type owl:Class ;
-               rdfs:subClassOf cve:CVEThing .
+               rdfs:subClassOf cve:CVEThing ,
+                               [ rdf:type owl:Restriction ;
+                                 owl:onProperty cve:ref_name ;
+                                 owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                 owl:onDataRange xsd:string
+                               ] ,
+                               [ rdf:type owl:Restriction ;
+                                 owl:onProperty cve:ref_source ;
+                                 owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                 owl:onDataRange xsd:string
+                               ] ,
+                               [ rdf:type owl:Restriction ;
+                                 owl:onProperty cve:url ;
+                                 owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                 owl:onDataRange xsd:anyURI
+                               ] .
 
 
 ###  http://purl.org/cyber/cve#Vendor
 cve:Vendor rdf:type owl:Class ;
-           rdfs:subClassOf cve:CVEThing .
+           rdfs:subClassOf cve:CVEThing ,
+                           [ rdf:type owl:Restriction ;
+                             owl:onProperty cve:has_product ;
+                             owl:someValuesFrom cve:Product
+                           ] ,
+                           [ rdf:type owl:Restriction ;
+                             owl:onProperty cve:vendor_name ;
+                             owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                             owl:onDataRange xsd:string
+                           ] .
 
 
 ###  http://purl.org/cyber/cve#Vulnerability
@@ -167,66 +265,66 @@ cve:Vulnerability rdf:type owl:Class ;
 ###  http://purl.org/cyber/cve#CVE-1999-0414
 cve:CVE-1999-0414 rdf:type owl:NamedIndividual ,
                            cve:CVE ;
-                  cve:hasAffectedProduct cve:linux_kernel_2.0.30 ,
-                                         cve:linux_kernel_2.0.35 ,
-                                         cve:linux_kernel_2.0.36 ,
-                                         cve:linux_kernel_2.0.37 ;
-                  cve:hasReferences cve:exchange.xforce.ibmcloud ;
+                  cve:has_affected_product cve:linux_kernel_2.0.30 ,
+                                           cve:linux_kernel_2.0.35 ,
+                                           cve:linux_kernel_2.0.36 ,
+                                           cve:linux_kernel_2.0.37 ;
+                  cve:has_references cve:exchange.xforce.ibmcloud ;
                   cve:description "In Linux before version 2.0.36, remote attackers can spoof a TCP connection and pass data to the application layer before fully establishing the connection."@en .
 
 
 ###  http://purl.org/cyber/cve#Linux
 cve:Linux rdf:type owl:NamedIndividual ,
                    cve:Vendor ;
-          cve:hasProduct cve:linux_kernel_2.0.30 ,
-                         cve:linux_kernel_2.0.35 ,
-                         cve:linux_kernel_2.0.36 ,
-                         cve:linux_kernel_2.0.37 ;
-          cve:vendorName "Linux" .
+          cve:has_product cve:linux_kernel_2.0.30 ,
+                          cve:linux_kernel_2.0.35 ,
+                          cve:linux_kernel_2.0.36 ,
+                          cve:linux_kernel_2.0.37 ;
+          cve:vendor_name "Linux" .
 
 
 ###  http://purl.org/cyber/cve#exchange.xforce.ibmcloud
 cve:exchange.xforce.ibmcloud rdf:type owl:NamedIndividual ,
                                       cve:References ;
-                             cve:refname "exchange.xforce.ibmcloud" ;
-                             cve:refsource "cve@mitre.org" ;
+                             cve:ref_name "exchange.xforce.ibmcloud" ;
+                             cve:ref_source "cve@mitre.org" ;
                              cve:url "https://exchange.xforce.ibmcloud.com/vulnerabilities/CVE-1999-0414" .
 
 
 ###  http://purl.org/cyber/cve#linux_kernel_2.0.30
 cve:linux_kernel_2.0.30 rdf:type owl:NamedIndividual ,
                                  cve:Product ;
-                        cve:hasCVE cve:CVE-1999-0414 ;
-                        cve:hasVendor cve:Linux ;
-                        cve:productCPE "cpe:2.3:o:linux:linux_kernel:2.0.30:*:*:*:*:*:*:*" ;
-                        cve:productName "Linux Kernel 2.0.30" .
+                        cve:has_cve cve:CVE-1999-0414 ;
+                        cve:has_vendor cve:Linux ;
+                        cve:product_cpe "cpe:2.3:o:linux:linux_kernel:2.0.30:*:*:*:*:*:*:*" ;
+                        cve:product_name "Linux Kernel 2.0.30" .
 
 
 ###  http://purl.org/cyber/cve#linux_kernel_2.0.35
 cve:linux_kernel_2.0.35 rdf:type owl:NamedIndividual ,
                                  cve:Product ;
-                        cve:hasCVE cve:CVE-1999-0414 ;
-                        cve:hasVendor cve:Linux ;
-                        cve:productCPE "cpe:2.3:o:linux:linux_kernel:2.0.35:*:*:*:*:*:*:*" ;
-                        cve:productName "Linux Kernel 2.0.35" .
+                        cve:has_cve cve:CVE-1999-0414 ;
+                        cve:has_vendor cve:Linux ;
+                        cve:product_cpe "cpe:2.3:o:linux:linux_kernel:2.0.35:*:*:*:*:*:*:*" ;
+                        cve:product_name "Linux Kernel 2.0.35" .
 
 
 ###  http://purl.org/cyber/cve#linux_kernel_2.0.36
 cve:linux_kernel_2.0.36 rdf:type owl:NamedIndividual ,
                                  cve:Product ;
-                        cve:hasCVE cve:CVE-1999-0414 ;
-                        cve:hasVendor cve:Linux ;
-                        cve:productCPE "cpe:2.3:o:linux:linux_kernel:2.0.36:*:*:*:*:*:*:*" ;
-                        cve:productName "Linux Kernel 2.0.36" .
+                        cve:has_cve cve:CVE-1999-0414 ;
+                        cve:has_vendor cve:Linux ;
+                        cve:product_cpe "cpe:2.3:o:linux:linux_kernel:2.0.36:*:*:*:*:*:*:*" ;
+                        cve:product_name "Linux Kernel 2.0.36" .
 
 
 ###  http://purl.org/cyber/cve#linux_kernel_2.0.37
 cve:linux_kernel_2.0.37 rdf:type owl:NamedIndividual ,
                                  cve:Product ;
-                        cve:hasCVE cve:CVE-1999-0414 ;
-                        cve:hasVendor cve:Linux ;
-                        cve:productCPE "cpe:2.3:o:linux:linux_kernel:2.0.37:*:*:*:*:*:*:*" ;
-                        cve:productName "Linux Kernel 2.0.37" .
+                        cve:has_cve cve:CVE-1999-0414 ;
+                        cve:has_vendor cve:Linux ;
+                        cve:product_cpe "cpe:2.3:o:linux:linux_kernel:2.0.37:*:*:*:*:*:*:*" ;
+                        cve:product_name "Linux Kernel 2.0.37" .
 
 
 ###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

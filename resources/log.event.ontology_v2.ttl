@@ -1,0 +1,179 @@
+@prefix : <http://www.semanticweb.org/logs-ontology-v2/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://www.semanticweb.org/logs-ontology-v2/> .
+
+<http://www.semanticweb.org/logs-ontology-v2> rdf:type owl:Ontology .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://www.semanticweb.org/logs-ontology-v2#has_package
+:has_package rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             rdfs:domain :ActionEvent ,
+                         :StateEvent ;
+             rdfs:range :Package .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://www.semanticweb.org/logs-ontology-v2#action
+:action rdf:type owl:DatatypeProperty ;
+        rdfs:subPropertyOf owl:topDataProperty ;
+        rdfs:domain :ActionEvent .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#command
+:command rdf:type owl:DatatypeProperty ;
+         rdfs:subPropertyOf owl:topDataProperty ;
+         rdfs:domain :StartUpEvent .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#current_version
+:current_version rdf:type owl:DatatypeProperty ;
+                 rdfs:subPropertyOf owl:topDataProperty ;
+                 rdfs:domain :Package .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#decision
+:decision rdf:type owl:DatatypeProperty ;
+          rdfs:subPropertyOf owl:topDataProperty ;
+          rdfs:domain :ConffileEvent .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#new_version
+:new_version rdf:type owl:DatatypeProperty ;
+             rdfs:subPropertyOf owl:topDataProperty ;
+             rdfs:domain :Package .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#package_architeture
+:package_architeture rdf:type owl:DatatypeProperty ;
+                     rdfs:subPropertyOf owl:topDataProperty ;
+                     rdfs:domain :Package .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#package_name
+:package_name rdf:type owl:DatatypeProperty ;
+              rdfs:subPropertyOf owl:topDataProperty ;
+              rdfs:domain :Package .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#state
+:state rdf:type owl:DatatypeProperty ;
+       rdfs:subPropertyOf owl:topDataProperty ;
+       rdfs:domain :StateEvent .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#timestamp
+:timestamp rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain :Event .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2#type
+:type rdf:type owl:DatatypeProperty ;
+      rdfs:subPropertyOf owl:topDataProperty ;
+      rdfs:domain :StartUpEvent .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://www.semanticweb.org/logs-ontology-v2#EventWithPackage
+:EventWithPackage rdf:type owl:Class ;
+                  rdfs:subClassOf :Event ,
+                                  [ rdf:type owl:Restriction ;
+                                    owl:onProperty :has_package ;
+                                    owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                    owl:onClass :Package
+                                  ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/ActionEvent
+:ActionEvent rdf:type owl:Class ;
+             rdfs:subClassOf :EventWithPackage ,
+                             [ rdf:type owl:Restriction ;
+                               owl:onProperty :action ;
+                               owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                               owl:onDataRange xsd:string
+                             ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/ConffileEvent
+:ConffileEvent rdf:type owl:Class ;
+               rdfs:subClassOf :Event ,
+                               [ rdf:type owl:Restriction ;
+                                 owl:onProperty :decision ;
+                                 owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                 owl:onDataRange xsd:string
+                               ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/Event
+:Event rdf:type owl:Class ;
+       rdfs:subClassOf [ rdf:type owl:Restriction ;
+                         owl:onProperty :timestamp ;
+                         owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                         owl:onDataRange xsd:dateTimeStamp
+                       ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/Package
+:Package rdf:type owl:Class ;
+         rdfs:subClassOf [ rdf:type owl:Restriction ;
+                           owl:onProperty :package_architeture ;
+                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:string
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :package_name ;
+                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:string
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :current_version ;
+                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:string
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :new_version ;
+                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:string
+                         ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/StartUpEvent
+:StartUpEvent rdf:type owl:Class ;
+              rdfs:subClassOf :Event ,
+                              [ rdf:type owl:Restriction ;
+                                owl:onProperty :command ;
+                                owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                owl:onDataRange xsd:string
+                              ] ,
+                              [ rdf:type owl:Restriction ;
+                                owl:onProperty :type ;
+                                owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                owl:onDataRange xsd:string
+                              ] .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/StateEvent
+:StateEvent rdf:type owl:Class ;
+            rdfs:subClassOf :EventWithPackage ,
+                            [ rdf:type owl:Restriction ;
+                              owl:onProperty :state ;
+                              owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                              owl:onDataRange xsd:string
+                            ] .
+
+
+###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

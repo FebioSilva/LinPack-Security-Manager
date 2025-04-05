@@ -1,0 +1,98 @@
+PREFIX : <http://www.semanticweb.org/linpack/>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cve: <http://purl.org/cyber/cve#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+INSERT DATA {
+  GRAPH <http://localhost:8890/linpack> {
+    # Main CVE entry
+    cve:CVE-2000-0508 a cve:CVE ;
+                      cve:description "rpc.lockd in Red Hat Linux 6.1 and 6.2 allows remote attackers to cause a denial of service via a malformed request." ;
+                      cve:base_score 5.0 ;
+                      cve:base_severity "MEDIUM" ;
+                      cve:cvss_version "2.0" ;
+                      cve:cvss_code "AV:N/AC:L/Au:N/C:N/I:N/A:P" ;
+                      cve:has_references _:ref1, _:ref2, _:ref3 .
+
+    # References
+    _:ref1 a cve:References ;
+           cve:url "http://archives.neohapsis.com/archives/bugtraq/2000-06/0073.html" ;
+           cve:ref_source "Bugtraq" ;
+           cve:ref_name "Bugtraq Archive Reference" .
+    
+    _:ref2 a cve:References ;
+           cve:url "http://www.securityfocus.com/bid/1372" ;
+           cve:ref_source "SecurityFocus" ;
+           cve:ref_name "BID-1372" .
+    
+    _:ref3 a cve:References ;
+           cve:url "https://exchange.xforce.ibmcloud.com/vulnerabilities/5050" ;
+           cve:ref_source "IBM X-Force" ;
+           cve:ref_name "X-Force Vulnerability Report" .
+
+    # Products and Vendors
+    cve:CVE-2000-0508 cve:has_affected_product _:prod1, _:prod2, _:prod3, _:prod4, _:prod5, _:prod6, _:prod7, _:prod8 .
+
+    # Debian Linux products
+    _:prod1 a cve:Product ;
+            cve:product_name "debian_linux" ;
+            cve:product_version "2.1" ;
+            cve:product_cpe "cpe:/o:debian:debian_linux:2.1" ;
+            cve:has_vendor _:vendor1 .
+    
+    _:prod2 a cve:Product ;
+            cve:product_name "debian_linux" ;
+            cve:product_version "2.2" ;
+            cve:product_cpe "cpe:/o:debian:debian_linux:2.2" ;
+            cve:has_vendor _:vendor1 .
+    
+    _:vendor1 a cve:Vendor ;
+              cve:vendor_name "debian" .
+
+    # Mandrake Linux products
+    _:prod3 a cve:Product ;
+            cve:product_name "mandrake_linux" ;
+            cve:product_version "6.0" ;
+            cve:product_cpe "cpe:/o:mandrakesoft:mandrake_linux:6.0" ;
+            cve:has_vendor _:vendor2 .
+    
+    _:prod4 a cve:Product ;
+            cve:product_name "mandrake_linux" ;
+            cve:product_version "6.1" ;
+            cve:product_cpe "cpe:/o:mandrakesoft:mandrake_linux:6.1" ;
+            cve:has_vendor _:vendor2 .
+    
+    _:prod5 a cve:Product ;
+            cve:product_name "mandrake_linux" ;
+            cve:product_version "7.0" ;
+            cve:product_cpe "cpe:/o:mandrakesoft:mandrake_linux:7.0" ;
+            cve:has_vendor _:vendor2 .
+    
+    _:vendor2 a cve:Vendor ;
+              cve:vendor_name "mandrakesoft" .
+
+    # Red Hat Linux products
+    _:prod6 a cve:Product ;
+            cve:product_name "linux" ;
+            cve:product_version "6.0" ;
+            cve:product_cpe "cpe:/o:redhat:linux:6.0" ;
+            cve:has_vendor _:vendor3 .
+    
+    _:prod7 a cve:Product ;
+            cve:product_name "linux" ;
+            cve:product_version "6.1" ;
+            cve:product_cpe "cpe:/o:redhat:linux:6.1" ;
+            cve:has_vendor _:vendor3 .
+    
+    _:prod8 a cve:Product ;
+            cve:product_name "linux" ;
+            cve:product_version "6.2" ;
+            cve:product_cpe "cpe:/o:redhat:linux:6.2" ;
+            cve:has_vendor _:vendor3 .
+    
+    _:vendor3 a cve:Vendor ;
+              cve:vendor_name "redhat" .
+  }
+}

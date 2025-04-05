@@ -52,7 +52,7 @@ class LogParser:
                     file.write(f"Event ID: {entry['log_id']}\nTimestamp: {entry['timestamp']}\nType: State\nState: {entry['state']}\nPackage: {entry['package']}\nArchitecture: {entry['architecture']}\nVersion: {entry['version']}\n\n")
 
 # Example usage
-input_file = "dpkg.log"  # Replace with your actual log file path
+input_file = "../resources/dpkg.log"  # Replace with your actual log file path
 output_file = "output_dpkg_template_by_line.txt"  # The file where parsed logs will be written
 
 parser = LogParser(input_file)

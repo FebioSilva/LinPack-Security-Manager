@@ -1,17 +1,22 @@
+import re
+
+def sanitize_for_blank_node(value):
+    """Sanitize string to create a valid blank node identifier."""
+    return re.sub(r'[^a-zA-Z0-9_.]', '_', value.strip().lower())
+
 def cve_object_to_sparql(cve_obj, graph_uri="http://localhost:8890/linpack"):
     sparql_prefix = """
-PREFIX : <http://www.semanticweb.org/linpack/>
+PREFIX : <http://www.semanticweb.org/linpack#>
 PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
     cve_id = cve_obj["id"]
-    description = cve_obj["description"].replace('"', '\\"')  # escapa aspas
+    description = cve_obj["description"].replace('"', '\\"')
     severity = cve_obj["severity"]
     references = cve_obj["references"]
     cpes = cve_obj["cpe"]
 
-    # Base do INSERT
     sparql = sparql_prefix + f"""
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
@@ -22,15 +27,16 @@ INSERT DATA {{
                 cve:cvss_version "{severity.get("cvssVersion", "2.0")}" ;
                 cve:cvss_code "{severity.get("cvssCode", "")}" ;
 """
-    # Adiciona as referências
+
+    # References
     ref_lines = []
     ref_blanks = []
-    for idx, ref in enumerate(references):
-        ref_id = f"_:ref{idx+1}"
-        ref_blanks.append(ref_id)
-        url = ref.get("url", "")
+    for ref in references:
         source = ref.get("source", "UnknownSource")
         name = ref.get("tags", [source])[0]
+        ref_id = f"cve:ref_{sanitize_for_blank_node(name)}"
+        ref_blanks.append(ref_id)
+        url = ref.get("url", "")
         ref_lines.append(f"""    {ref_id} a cve:References ;
            cve:url "{url}" ;
            cve:ref_source "{source}" ;
@@ -39,34 +45,42 @@ INSERT DATA {{
     sparql += f"                cve:has_references {', '.join(ref_blanks)} .\n\n"
     sparql += "\n".join(ref_lines)
 
-    # Adiciona produtos
-    sparql += f"\n\n    cve:{cve_id} cve:has_affected_product "
-    prod_blanks = []
-    vendor_blanks = {}
-    prod_lines = []
-    for idx, cpe in enumerate(cpes):
-        prod_id = f"_:prod{idx+1}"
-        vendor_name = cpe.get("vendor", "unknown_vendor")
-        if vendor_name not in vendor_blanks:
-            vendor_blanks[vendor_name] = f"_:vendor{len(vendor_blanks)+1}"
-        vendor_id = vendor_blanks[vendor_name]
+    # Products and vendors
+    if cpes:
+        sparql += f"\n\n    cve:{cve_id} cve:has_affected_product "
+        prod_blanks = []
+        vendor_blanks = {}
+        prod_lines = []
 
-        prod_blanks.append(prod_id)
-        prod_lines.append(f"""{prod_id} a cve:Product ;
-            cve:product_name "{cpe.get('product', 'unknown_product')}" ;
-            cve:product_version "{cpe.get('version', 'unknown')}" ;
-            cve:product_cpe "cpe:/o:{vendor_name}:{cpe.get('product', '')}:{cpe.get('version', '')}" ;
-            cve:has_vendor {vendor_id} .""")
+        for cpe in cpes:
+            product = cpe.get('product', 'unknown_product')
+            version = cpe.get('version', 'unknown')
+            vendor_name = cpe.get("vendor", "unknown_vendor")
 
-    sparql += f"{', '.join(prod_blanks)} .\n\n"
-    sparql += "\n".join(prod_lines)
+            prod_key = f"{product}_{version}"
+            prod_id = f"cve:prod_{sanitize_for_blank_node(prod_key)}"
+            prod_blanks.append(prod_id)
 
-    # Adiciona vendors
-    vendor_lines = []
-    for name, blank in vendor_blanks.items():
-        vendor_lines.append(f"""{blank} a cve:Vendor ;
-            cve:vendor_name "{name}" .""")
+            # Vendor blank node
+            if vendor_name not in vendor_blanks:
+                vendor_blanks[vendor_name] = f"cve:vendor_{sanitize_for_blank_node(vendor_name)}"
+            vendor_id = vendor_blanks[vendor_name]
 
-    sparql += "\n\n" + "\n".join(vendor_lines)
+            prod_lines.append(f"""{prod_id} a cve:Product ;
+                cve:product_name "{product}" ;
+                cve:product_version "{version}" ;
+                cve:product_cpe "cpe:/o:{vendor_name}:{product}:{version}" ;
+                cve:has_vendor {vendor_id} .""")
+
+        sparql += f"{', '.join(prod_blanks)} .\n\n"
+        sparql += "\n".join(prod_lines)
+
+        vendor_lines = []
+        for name, blank in vendor_blanks.items():
+            vendor_lines.append(f"""{blank} a cve:Vendor ;
+                cve:vendor_name "{name}" .""")
+
+        sparql += "\n\n" + "\n".join(vendor_lines)
+
     sparql += "\n  }\n}"
     return sparql

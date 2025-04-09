@@ -8,7 +8,9 @@
 
 <http://www.semanticweb.org/linpack> rdf:type owl:Ontology ;
                                       owl:imports <http://purl.org/cyber/cve> ,
-                                                  <http://www.semanticweb.org/logs-ontology-v2> .
+                                                  <http://www.semanticweb.org/logs-ontology-v2> ;
+                                      rdfs:comment "Ontology for representing the LinPack system, with relationships between CVEs and logs" ;
+                                      rdfs:label "LinPack Ontology" .
 
 #################################################################
 #    Classes

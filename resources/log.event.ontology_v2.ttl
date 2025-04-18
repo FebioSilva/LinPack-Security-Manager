@@ -31,6 +31,7 @@
 :action rdf:type owl:DatatypeProperty ;
         rdfs:subPropertyOf owl:topDataProperty ;
         rdfs:domain :ActionEvent ;
+        rdfs:range xsd:string ;
         rdfs:comment "Represents the action given in an ActionEvent" .
 
 
@@ -38,6 +39,7 @@
 :command rdf:type owl:DatatypeProperty ;
          rdfs:subPropertyOf owl:topDataProperty ;
          rdfs:domain :StartUpEvent ;
+         rdfs:range xsd:string ;
          rdfs:comment "Represents the command given in a StartUpEvent" .
 
 
@@ -45,13 +47,15 @@
 :current_version rdf:type owl:DatatypeProperty ;
                  rdfs:subPropertyOf owl:topDataProperty ;
                  rdfs:domain :Package ;
+                 rdfs:range xsd:string ;
                  rdfs:comment "Represents the current version of a package" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/decision
 :decision rdf:type owl:DatatypeProperty ;
           rdfs:subPropertyOf owl:topDataProperty ;
-          rdfs:domain :ConffileEvent ;
+          rdfs:domain :ConfFileEvent ;
+          rdfs:range xsd:string ;
           rdfs:comment "Represents the final decision taken in a ConffileEvent" .
 
 
@@ -59,6 +63,7 @@
 :new_version rdf:type owl:DatatypeProperty ;
              rdfs:subPropertyOf owl:topDataProperty ;
              rdfs:domain :Package ;
+             rdfs:range xsd:string ;
              rdfs:comment "Represents the new version of a package after an event that install or update a package" .
 
 
@@ -66,6 +71,7 @@
 :package_architeture rdf:type owl:DatatypeProperty ;
                      rdfs:subPropertyOf owl:topDataProperty ;
                      rdfs:domain :Package ;
+                     rdfs:range xsd:string ;
                      rdfs:comment "Represents the package architecture" .
 
 
@@ -73,6 +79,7 @@
 :package_name rdf:type owl:DatatypeProperty ;
               rdfs:subPropertyOf owl:topDataProperty ;
               rdfs:domain :Package ;
+              rdfs:range xsd:string ;
               rdfs:comment "Represents the name of the package" .
 
 
@@ -80,6 +87,7 @@
 :state rdf:type owl:DatatypeProperty ;
        rdfs:subPropertyOf owl:topDataProperty ;
        rdfs:domain :StateEvent ;
+       rdfs:range xsd:string ;
        rdfs:comment "Represents the state of the package in a StateEvent" .
 
 
@@ -87,6 +95,7 @@
 :timestamp rdf:type owl:DatatypeProperty ;
            rdfs:subPropertyOf owl:topDataProperty ;
            rdfs:domain :EventHandling ;
+           rdfs:range xsd:dateTimeStamp ;
            rdfs:comment "Represents the timestamp in which the event was captured" .
 
 
@@ -94,6 +103,7 @@
 :type rdf:type owl:DatatypeProperty ;
       rdfs:subPropertyOf owl:topDataProperty ;
       rdfs:domain :StartUpEvent ;
+      rdfs:range xsd:string ;
       rdfs:comment "Represents the type given in a StartUpEvent" .
 
 
@@ -113,8 +123,8 @@
              rdfs:label "ActionEvent" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/ConffileEvent
-:ConffileEvent rdf:type owl:Class ;
+###  http://www.semanticweb.org/logs-ontology-v2/ConfFileEvent
+:ConfFileEvent rdf:type owl:Class ;
                rdfs:subClassOf :EventHandling ,
                                [ rdf:type owl:Restriction ;
                                  owl:onProperty :decision ;

@@ -77,24 +77,32 @@
 ###  http://purl.org/cyber/cve#base_score
 :base_score rdf:type owl:DatatypeProperty ;
             rdfs:subPropertyOf owl:topDataProperty ;
+            rdfs:domain :CVE ;
+            rdfs:range xsd:double ;
             rdfs:comment "Represents the severity score given to a CVE by the CVSS" .
 
 
 ###  http://purl.org/cyber/cve#base_severity
 :base_severity rdf:type owl:DatatypeProperty ;
                rdfs:subPropertyOf owl:topDataProperty ;
+               rdfs:domain :CVE ;
+               rdfs:range xsd:string ;
                rdfs:comment "Represents the severity given to a CVE by the CVSS" .
 
 
 ###  http://purl.org/cyber/cve#cvss_code
 :cvss_code rdf:type owl:DatatypeProperty ;
            rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain :CVE ;
+           rdfs:range xsd:string ;
            rdfs:comment "Represents the CVSS code generated for a CVE" .
 
 
 ###  http://purl.org/cyber/cve#cvss_version
 :cvss_version rdf:type owl:DatatypeProperty ;
               rdfs:subPropertyOf owl:topDataProperty ;
+              rdfs:domain :CVE ;
+              rdfs:range xsd:string ;
               rdfs:comment "Represents the version of the CVSS that is scoring the severity of a CVE" .
 
 
@@ -102,6 +110,7 @@
 :description rdf:type owl:DatatypeProperty ;
              rdfs:subPropertyOf owl:topDataProperty ;
              rdfs:domain :CVE ;
+             rdfs:range xsd:string ;
              rdfs:comment "Represents the description given to a CVE" .
 
 
@@ -109,6 +118,7 @@
 :product_cpe rdf:type owl:DatatypeProperty ;
              rdfs:subPropertyOf owl:topDataProperty ;
              rdfs:domain :Product ;
+             rdfs:range xsd:string ;
              rdfs:comment "Represents the CPE that identifies the product to a CVE" .
 
 
@@ -116,12 +126,15 @@
 :product_name rdf:type owl:DatatypeProperty ;
               rdfs:subPropertyOf owl:topDataProperty ;
               rdfs:domain :Product ;
+              rdfs:range xsd:string ;
               rdfs:comment "Represents the product name" .
 
 
 ###  http://purl.org/cyber/cve#product_version
 :product_version rdf:type owl:DatatypeProperty ;
                  rdfs:subPropertyOf owl:topDataProperty ;
+                 rdfs:domain :Product ;
+                 rdfs:range xsd:string ;
                  rdfs:comment "Represents the version of the product" .
 
 
@@ -152,6 +165,8 @@
 ###  http://purl.org/cyber/cve#vendor_name
 :vendor_name rdf:type owl:DatatypeProperty ;
              rdfs:subPropertyOf owl:topDataProperty ;
+             rdfs:domain :Vendor ;
+             rdfs:range xsd:string ;
              rdfs:comment "Represents the name of the vendor of a product" .
 
 

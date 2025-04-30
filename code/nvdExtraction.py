@@ -16,14 +16,16 @@ def fetch_cves_for_package(package_name):
 
     try:
         while True:
+            headers = {
+                "apiKey": api_key  # API key goes in headers
+            }
             params = {
-                "apiKey": api_key,
                 "keywordSearch": package_name,
                 "resultsPerPage": results_per_page,
                 "startIndex": start_index
             }
             # Make a request to the API
-            response = requests.get(url, params=params)
+            response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()  # Verify if the request was successful
 
             # Convert to JSON

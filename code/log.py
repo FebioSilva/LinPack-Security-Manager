@@ -11,6 +11,7 @@ if __name__ == "__main__":
         print(log)
         print("*****************************************")
         log_in_sparql = logPopulate.dpkg_log_to_sparql(log)
+        print(log)
         print(log_in_sparql)
-        dbOperations.insert_into_graph(log_in_sparql)
+        # dbOperations.insert_into_graph(log_in_sparql)
         print("-----------------------------------------------")

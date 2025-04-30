@@ -1,8 +1,9 @@
-from asyncio import sleep
+
+import time
 import requests
 
 
-async def fetch_cves_for_package(package_name):
+def fetch_cves_for_package(package_name):
     # NVD API URL for CVE (version 2.0)
     url = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 
@@ -92,7 +93,7 @@ async def fetch_cves_for_package(package_name):
                 if start_index >= total_results:
                     break
 
-                await sleep(30)
+                time.sleep(30)
 
             # Return the CVE objects list
             return cve_objects

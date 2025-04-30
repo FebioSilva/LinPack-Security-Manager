@@ -47,8 +47,17 @@ def fetch_cves_for_package(package_name):
                 cve_id = cve_data['id']
                 description = cve_data['descriptions'][0]['value']
 
-                cvss_data = cve_data.get('metrics', {}).get(
-                    'cvssMetricV2', [{}])[0].get('cvssData', {})
+                metrics = cve_data.get("metrics", {})
+                cvss_data = {}
+                base_severity = None
+
+                for key in metrics:
+                    if key.startswith("cvssMetric"):
+                        metric_list = metrics[key]
+                        if metric_list:
+                            cvss_data = metric_list[0].get("cvssData", {})
+                            break  # usamos apenas a primeira métrica encontrada
+
                 severity = {
                     "cvssVersion": cvss_data.get('version'),
                     "baseScore": cvss_data.get('baseScore'),
@@ -91,14 +100,14 @@ def fetch_cves_for_package(package_name):
                 # Add the object to the list
                 cve_objects.append(cve_object)
 
-                start_index += results_per_page
-                if start_index >= total_results:
-                    break
+            start_index += results_per_page
+            if start_index >= total_results:
+                break
 
-                time.sleep(30)
+            time.sleep(6)
 
             # Return the CVE objects list
-            return cve_objects
+        return cve_objects
 
     except requests.exceptions.HTTPError as e:
         print(f"❌ Erro HTTP: {e}")

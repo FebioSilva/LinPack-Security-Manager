@@ -38,7 +38,7 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/command
 :command rdf:type owl:DatatypeProperty ;
          rdfs:subPropertyOf owl:topDataProperty ;
-         rdfs:domain :StartUpEvent ;
+         rdfs:domain :StartupEvent ;
          rdfs:range xsd:string ;
          rdfs:comment "Represents the command given in a StartUpEvent" .
 
@@ -67,12 +67,12 @@
              rdfs:comment "Represents the new version of a package after an event that install or update a package" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/package_architeture
-:package_architeture rdf:type owl:DatatypeProperty ;
-                     rdfs:subPropertyOf owl:topDataProperty ;
-                     rdfs:domain :Package ;
-                     rdfs:range xsd:string ;
-                     rdfs:comment "Represents the package architecture" .
+###  http://www.semanticweb.org/logs-ontology-v2/package_architecture
+:package_architecture rdf:type owl:DatatypeProperty ;
+                      rdfs:subPropertyOf owl:topDataProperty ;
+                      rdfs:domain :Package ;
+                      rdfs:range xsd:string ;
+                      rdfs:comment "Represents the package architecture" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/package_name
@@ -102,7 +102,7 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/type
 :type rdf:type owl:DatatypeProperty ;
       rdfs:subPropertyOf owl:topDataProperty ;
-      rdfs:domain :StartUpEvent ;
+      rdfs:domain :StartupEvent ;
       rdfs:range xsd:string ;
       rdfs:comment "Represents the type given in a StartUpEvent" .
 
@@ -161,7 +161,7 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/Package
 :Package rdf:type owl:Class ;
          rdfs:subClassOf [ rdf:type owl:Restriction ;
-                           owl:onProperty :package_architeture ;
+                           owl:onProperty :package_architecture ;
                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onDataRange xsd:string
                          ] ,
@@ -184,8 +184,8 @@
          rdfs:label "Package" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/StartUpEvent
-:StartUpEvent rdf:type owl:Class ;
+###  http://www.semanticweb.org/logs-ontology-v2/StartupEvent
+:StartupEvent rdf:type owl:Class ;
               rdfs:subClassOf :EventHandling ,
                               [ rdf:type owl:Restriction ;
                                 owl:onProperty :command ;
@@ -197,8 +197,7 @@
                                 owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                                 owl:onDataRange xsd:string
                               ] ;
-              rdfs:comment "Event related to startup process" ;
-              rdfs:label "StartUpEvent" .
+              rdfs:comment "Event related to startup process" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/StateEvent

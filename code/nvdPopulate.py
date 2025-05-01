@@ -1,8 +1,10 @@
 import re
 
+
 def sanitize_for_blank_node(value):
     """Sanitize string to create a valid blank node identifier."""
     return re.sub(r'[^a-zA-Z0-9_.]', '_', value.strip().lower())
+
 
 def cve_object_to_sparql(cve_obj, graph_uri="http://localhost:8890/linpack"):
     sparql_prefix = """
@@ -85,3 +87,29 @@ INSERT DATA {{
 
     sparql += "\n  }\n}"
     return sparql
+
+
+if __name__ == "__main__":
+    # Example CVE object for testing
+    cve_example = {
+        "id": "CVE-2023-12345",
+        "description": "Example vulnerability description.",
+        "severity": {
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "cvssVersion": "3.1",
+            "cvssCode": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        },
+        "references": [
+            {"url": "http://example.com/vuln1",
+                "source": "ExampleSource", "tags": ["tag1"]},
+            {"url": "http://example.com/vuln2",
+                "source": "AnotherSource", "tags": ["tag2"]}
+        ],
+        "cpe": [
+            {"product": "linux", "version": "5.4", "vendor": "linux_vendor"},
+            {"product": "apache", "version": "2.4", "vendor": "apache_vendor"}
+        ]
+    }
+
+    print(cve_object_to_sparql(cve_example))

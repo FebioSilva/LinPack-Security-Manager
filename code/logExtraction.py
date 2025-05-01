@@ -26,13 +26,13 @@ class LogParser:
 
                 # Match conffile logs
                 conffile_match = re.match(
-                    r"(?P<timestamp>\d{4} -\d{2} -\d{2} \d{2}:\d{2}:\d{2}) conffile (?P<filepath>.+?) (?P<action>\w+)",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) conffile (?P<filepath>.+?) (?P<decision>\w+)",
                     line
                 )
 
                 # Match startup logs
                 startup_match = re.match(
-                    r"(?P<timestamp>\d{4} -\d{2} -\d{2} \d{2}:\d{2}:\d{2}) startup (?P<context>\w+) (?P<action>\w+)",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) startup (?P<context>\w+) (?P<command>\w+)",
                     line
                 )
 
@@ -40,7 +40,7 @@ class LogParser:
                 if action_match:
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": action_match.group("timestamp"),
+                        "timestamp": action_match.group("timestamp").replace(" ", "T"),
                         "type": "action",
                         "action": action_match.group("action"),
                         "package": action_match.group("package"),
@@ -52,7 +52,7 @@ class LogParser:
                 elif state_match:
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": state_match.group("timestamp"),
+                        "timestamp": state_match.group("timestamp").replace(" ", "T"),
                         "type": "state",
                         "state": state_match.group("state"),
                         "package": state_match.group("package"),
@@ -63,19 +63,19 @@ class LogParser:
                 elif conffile_match:
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": conffile_match.group("timestamp"),
+                        "timestamp": conffile_match.group("timestamp").replace(" ", "T"),
                         "type": "conffile",
                         "filepath": conffile_match.group("filepath").strip(),
-                        "action": conffile_match.group("action"),
+                        "decision": conffile_match.group("decision"),
                     })
 
                 elif startup_match:
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": startup_match.group("timestamp"),
+                        "timestamp": startup_match.group("timestamp").replace(" ", "T"),
                         "type": "startup",
                         "context": startup_match.group("context"),
-                        "action": startup_match.group("action"),
+                        "command": startup_match.group("command"),
                     })
 
                 else:
@@ -116,4 +116,10 @@ if __name__ == "__main__":
     parser = LogParser(input_file)
     parser.parse_log()
     parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
-    print(parsed_logs)  # Print parsed logs for debugging
+    startup_logs = [log for log in parsed_logs if log["type"] == "startup"]
+    print("Startup logs:")
+    for log in startup_logs:
+        print(
+            f"Timestamp: {log["type"]}, {log['timestamp']}, Context: {log['context']}, Command: {log['command']}")
+    print("Parsed logs:")
+    # print(parsed_logs)  # Print parsed logs for debugging

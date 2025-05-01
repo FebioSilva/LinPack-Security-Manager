@@ -13,6 +13,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
     cve_id = cve_obj["id"]
     description = cve_obj["description"].replace('"', '\\"')
+    single_line_description = "\\n".join(line.strip() for line in description.splitlines() if line.strip())
     severity = cve_obj["severity"]
     references = cve_obj["references"]
     cpes = cve_obj["cpe"]
@@ -21,11 +22,11 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
     cve:{cve_id} a cve:CVE ;
-                cve:description "{description}" ;
-                cve:base_score {severity.get("baseScore", 0)} ;
-                cve:base_severity "{severity.get("baseSeverity", "UNKNOWN")}" ;
-                cve:cvss_version "{severity.get("cvssVersion", "2.0")}" ;
-                cve:cvss_code "{severity.get("cvssCode", "")}" ;
+                cve:description "{single_line_description}" ;
+                cve:base_score {-1 if severity.get("baseScore") == None else severity.get("baseScore", 0)} ;
+                cve:base_severity "{severity.get("baseSeverity")}" ;
+                cve:cvss_version "{severity.get("cvssVersion")}" ;
+                cve:cvss_code "{severity.get("cvssCode")}" ;
 """
 
     # References

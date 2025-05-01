@@ -15,7 +15,6 @@ INSERT DATA {{
     logs:{log_id} rdf:type logs:{log_type} ;
                   logs:hasTimestamp "{log_obj['timestamp']}"^^xsd:dateTime ;
 """
-
     if log_obj["type"] == "action":
         sparql += f"""                  logs:hasAction "{log_obj['action']}" ;
                   logs:hasPackage "{log_obj['package']}" ;

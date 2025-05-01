@@ -49,7 +49,6 @@ def fetch_cves_for_package(package_name):
 
                 metrics = cve_data.get("metrics", {})
                 cvss_data = {}
-                base_severity = None
 
                 for key in metrics:
                     if key.startswith("cvssMetric"):
@@ -61,7 +60,7 @@ def fetch_cves_for_package(package_name):
                 severity = {
                     "cvssVersion": cvss_data.get('version'),
                     "baseScore": cvss_data.get('baseScore'),
-                    "baseSeverity": cve_data.get('metrics', {}).get('cvssMetricV2', [{}])[0].get('baseSeverity'),
+                    "baseSeverity": cvss_data.get('baseSeverity'),
                     "cvssCode": cvss_data.get('vectorString')
                 }
                 references = cve_data['references']

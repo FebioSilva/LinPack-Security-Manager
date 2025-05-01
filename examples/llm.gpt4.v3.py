@@ -4,7 +4,7 @@ import time
 from openai import OpenAI
 
 # Initialize OpenAI client
-client = OpenAI(api_key="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")
+client = OpenAI(api_key="a vossa API KEY")
 
 class DpkgLogParser:
     def __init__(self, log_file):

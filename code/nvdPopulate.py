@@ -14,7 +14,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
     cve_id = cve_obj["id"]
-    description = cve_obj["description"].replace('"', '\\"')
+    description = cve_obj["description"].replace('\\', '\\\\').replace('"', '\\"')
     single_line_description = "\\n".join(line.strip() for line in description.splitlines() if line.strip())
     severity = cve_obj["severity"]
     references = cve_obj["references"]

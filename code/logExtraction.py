@@ -14,7 +14,7 @@ class LogParser:
 
                 # Match action logs (install, upgrade, remove)
                 action_match = re.match(
-                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<action>install|upgrade|remove) (?P<package>[\w\-\.\+]+)\s*:\s*(?P<architecture>[\w\d\-]+) (?P<version_old>[\w\.\-\:]+) (?P<version_new>[\w\.\-\:]+|<none>)",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<action>install|upgrade|remove|purge|configure|unpack|triggered|trigproc|trigawait) (?P<package>[\w\-\.\+]+)(?:\s*:\s*(?P<architecture>[\w\d\-]+) (?P<version_old>[\w\.\-\:]+)?(?: (?P<version_new>[\w\.\-\:]+|<none>))?)?",
                     line
                 )
 
@@ -116,10 +116,10 @@ if __name__ == "__main__":
     parser = LogParser(input_file)
     parser.parse_log()
     parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
-    startup_logs = [log for log in parsed_logs if log["type"] == "startup"]
+    startup_logs = [log for log in parsed_logs if log["type"] == "action"]
     print("Startup logs:")
     for log in startup_logs:
-        print(
-            f"Timestamp: {log["type"]}, {log['timestamp']}, Context: {log['context']}, Command: {log['command']}")
+        print(log)
+        print("*****************************************")
     print("Parsed logs:")
     # print(parsed_logs)  # Print parsed logs for debugging

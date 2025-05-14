@@ -2,6 +2,8 @@ import re
 
 
 def sanitize_for_uri(value):
+    if value is None:
+        return "none"
     return re.sub(r'[^a-zA-Z0-9]', '_', value)
 
 
@@ -61,7 +63,7 @@ INSERT DATA {{
             sparql += f"""
     logs:{package_uri} rdf:type logs:Package ;
                     logs:package_name "{log_obj['package']}" ;
-                    logs:package_architeture "{log_obj['architecture']}" ;
+                    logs:package_architecture "{log_obj['architecture']}" ;
                     logs:current_version "{log_obj['version_old']}" ;
                     logs:new_version "{log_obj['version_new']}" .
         """
@@ -81,3 +83,32 @@ INSERT DATA {{
 }
   """
     return sparql
+
+
+if __name__ == "__main__":
+    # Example log object
+    log_obj = {
+        'log_id': 1,
+        'type': 'action',
+        'timestamp': '2024-02-15 12:34:56',
+        'action': 'install',
+        'package': 'openssl',
+        'architecture': 'amd64',
+        'version_old': '1.1.1f-1ubuntu2.16',
+        'version_new': '1.1.1f-1ubuntu2.17'
+    }
+    log_state_obj = {
+        'log_id': 2,
+        'type': 'state',
+        'timestamp': '2024-02-15 12:35:00',
+        'state': 'installed',
+        'package': 'openssl',
+        'architecture': 'amd64',
+        'version': '1.1.1f-1ubuntu2.17'
+    }
+
+    sparql = dpkg_log_to_sparql(log_obj)
+    print(sparql)
+
+    sparql = dpkg_log_to_sparql(log_state_obj)
+    print(sparql)

@@ -27,14 +27,6 @@
 #    Data properties
 #################################################################
 
-###  http://www.semanticweb.org/logs-ontology-v2#filepath
-:filepath rdf:type owl:DatatypeProperty ;
-          rdfs:subPropertyOf owl:topDataProperty ;
-          rdfs:domain :ConfFileEvent ;
-          rdfs:range xsd:string ;
-          rdfs:comment "Represents the configuration file that will be either kept or discarded" .
-
-
 ###  http://www.semanticweb.org/logs-ontology-v2/action
 :action rdf:type owl:DatatypeProperty ;
         rdfs:subPropertyOf owl:topDataProperty ;
@@ -62,9 +54,17 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/decision
 :decision rdf:type owl:DatatypeProperty ;
           rdfs:subPropertyOf owl:topDataProperty ;
-          rdfs:domain :ConfFileEvent ;
+          rdfs:domain :ConffileEvent ;
           rdfs:range xsd:string ;
           rdfs:comment "Represents the final decision taken in a ConffileEvent" .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/filepath
+:filepath rdf:type owl:DatatypeProperty ;
+          rdfs:subPropertyOf owl:topDataProperty ;
+          rdfs:domain :ConffileEvent ;
+          rdfs:range xsd:string ;
+          rdfs:comment "Represents the configuration file that will be either kept or discarded" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/new_version
@@ -131,8 +131,8 @@
              rdfs:label "ActionEvent" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/ConfFileEvent
-:ConfFileEvent rdf:type owl:Class ;
+###  http://www.semanticweb.org/logs-ontology-v2/ConffileEvent
+:ConffileEvent rdf:type owl:Class ;
                rdfs:subClassOf :EventHandling ,
                                [ rdf:type owl:Restriction ;
                                  owl:onProperty :decision ;

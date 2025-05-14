@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Monitor de CVEs + Pacotes (com Propriedades)</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../queries/queries.js"></script> <!-- Referência ao queries.js -->
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    svg { width: 100vw; height: 100vh; border: 1px solid #000000; }
+    .node circle { stroke: #fff; stroke-width: 1.5px; }
+    .node text { pointer-events: none; font-size: 12px; }
+    line { stroke: #999; stroke-opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div id="tooltip" style="
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    pointer-events: none;
+    font-size: 12px;
+    display: none;
+  "></div>
+
+  <svg></svg>
+
+  <script>
+  // Função de arrasto (drag)
+  function drag(simulation) {
+    function dragstarted(event, d) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+      d.fx = event.x;
+      d.fy = event.y;
+    }
+
+    function dragended(event, d) {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    }
+
+    return d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended);
+  }
+
+  // Função principal
+  // Função principal
+async function main() {
+  try {
+    const data = await fetchDataFromSPARQLEndPoint(queryLog); // Buscar os dados
+    const graph = processLogDataToGraph(data); // Processar os dados
+
+    const nodes = graph.nodes;
+    const links = graph.links;
+
+    const svg = d3.select("svg");
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    const graphGroup = svg.append("g"); // Grupo que conterá todo o grafo
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 4])
+      .on("zoom", (event) => {
+        graphGroup.attr("transform", event.transform);
+      });
+
+    svg.call(zoom);
+
+    const simulation = d3.forceSimulation(nodes)
+      .force("link", d3.forceLink(links).id(d => d.id).distance(120))
+      .force("charge", d3.forceManyBody().strength(-150))
+      .force("center", d3.forceCenter(width / 2, height / 2))
+      .force("collide", d3.forceCollide().radius(40))
+      .alphaDecay(0.05);
+
+    const link = graphGroup.append("g")
+      .attr("stroke", "#aaa")
+      .selectAll("line")
+      .data(links)
+      .join("line");
+
+    const node = graphGroup.append("g")
+      .selectAll("g")
+      .data(nodes)
+      .join("g")
+      .attr("class", "node")
+      .call(drag(simulation));
+
+    node.append("circle")
+      .attr("r", 10)
+      .attr("fill", d => {
+        return d.type === "Package" ? "steelblue" : "orange";
+      });
+
+    node.append("text")
+      .text(d => d.id)
+      .attr("dx", 12)
+      .attr("dy", ".35em");
+
+    // Atualiza as posições dos links e nós a cada "tick" da simulação
+    simulation.on("tick", () => {
+      link
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
+
+      node.attr("transform", d => `translate(${d.x},${d.y})`);
+    });
+
+    // Tooltip para exibir as propriedades dos nós
+    const tooltip = d3.select("#tooltip");
+
+    node
+      .on("mouseover", (event, d) => {
+        let html = `<strong>${d.id}</strong>`;
+
+        // Exibe propriedades conforme o tipo de nó
+        if (d.type === "Package") {
+          // Exibe propriedades do pacote
+          if (d.package_name && d.current_version && d.package_architecture) {
+            html += `<br><em>Package Name:</em> ${d.package_name}<br><em>Version:</em> ${d.current_version}<br><em>Architecture:</em> ${d.package_architecture}`;
+          } else {
+            html += `<br><em>Package Details:</em> No details available`;
+          }
+        } else if (d.type === "ActionEvent") {
+          // Exibe propriedades do ActionEvent
+          if (d.action) {
+            html += `<br><em>Action:</em> ${d.action}`;
+          }
+        } else if (d.type === "StateEvent") {
+          // Exibe propriedades do StateEvent
+          if (d.state) {
+            html += `<br><em>State:</em> ${d.state}`;
+          }
+        } else if (d.type === "ConffileEvent") {
+          // Exibe propriedades do ConfFileEvent
+          if (d.decision) {
+            html += `<br><em>Decision:</em> ${d.decision}`;
+          } 
+        } else if (d.type === "StartupEvent") {
+          // Exibe propriedades do StartUpEvent
+          if (d.context) {
+            html += `<br><em>Context:</em> ${d.context}`;
+          }
+          if (d.command) {
+            html += `<br><em>Command:</em> ${d.command}`;
+          }
+        }
+
+        // Adiciona o timestamp para logs
+        if (d.timestamp) {
+          html += `<br><em>Timestamp:</em> ${d.timestamp}`;
+        }
+
+        tooltip
+          .html(html)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px")
+          .style("display", "block");
+      })
+      .on("mousemove", event => {
+        tooltip
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("display", "none");
+      });
+
+  } catch (error) {
+    console.error("Error fetching and processing data:", error);
+  }
+}
+
+main(); // Executa a função principal
+
+  </script>
+
+</body>
+</html>

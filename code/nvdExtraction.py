@@ -73,11 +73,15 @@ def fetch_cves_for_package(package_name):
                         for cpe_match in node['cpeMatch']:
                             cpe_parts = cpe_match.get(
                                 'criteria', '').split(':')
+                            cpe_version_start = cpe_match.get('versionStartIncluding', None)
+                            cpe_version_end = cpe_match.get('versionEndExcluding', None)
                             cpe_list.append({
                                 "part": cpe_parts[1] if len(cpe_parts) > 1 else None,
                                 "vendor": cpe_parts[3] if len(cpe_parts) > 3 else None,
                                 "product": cpe_parts[4] if len(cpe_parts) > 4 else None,
                                 "version": cpe_parts[5] if len(cpe_parts) > 5 else None,
+                                "startVersion": cpe_version_start,
+                                "endVersion": cpe_version_end,
                                 "update": cpe_parts[6] if len(cpe_parts) > 6 else None,
                                 "edition": cpe_parts[7] if len(cpe_parts) > 7 else None,
                                 "language": cpe_parts[8] if len(cpe_parts) > 8 else None,
@@ -131,7 +135,7 @@ def write_to_file(cve_list, output_file):
             if cve['cpe']:
                 for cpe in cve['cpe']:
                     file.write(
-                        f"  - Vendor: {cpe.get('vendor')}, Product: {cpe.get('product')}, Version: {cpe.get('version')}\n")
+                        f"  - Vendor: {cpe.get('vendor')}, Product: {cpe.get('product')}, Version: {cpe.get('version')}, First Version (Including): {cpe.get('startVersion')}, Last Version (Excluding): {cpe.get('endVersion')}\n")
             else:
                 file.write("  - No CPE data available.\n")
 

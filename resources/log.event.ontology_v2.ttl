@@ -27,6 +27,14 @@
 #    Data properties
 #################################################################
 
+###  http://www.semanticweb.org/logs-ontology-v2#filepath
+:filepath rdf:type owl:DatatypeProperty ;
+          rdfs:subPropertyOf owl:topDataProperty ;
+          rdfs:domain :ConfFileEvent ;
+          rdfs:range xsd:string ;
+          rdfs:comment "Represents the configuration file that will be either kept or discarded" .
+
+
 ###  http://www.semanticweb.org/logs-ontology-v2/action
 :action rdf:type owl:DatatypeProperty ;
         rdfs:subPropertyOf owl:topDataProperty ;

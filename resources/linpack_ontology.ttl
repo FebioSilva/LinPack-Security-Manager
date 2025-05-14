@@ -13,6 +13,22 @@
                                       rdfs:label "LinPack Ontology" .
 
 #################################################################
+#    Data properties
+#################################################################
+
+###  http://purl.org/cyber/cve#ref_name
+<http://purl.org/cyber/cve#ref_name> rdfs:range xsd:string .
+
+
+###  http://purl.org/cyber/cve#ref_source
+<http://purl.org/cyber/cve#ref_source> rdfs:range xsd:string .
+
+
+###  http://purl.org/cyber/cve#url
+<http://purl.org/cyber/cve#url> rdfs:range xsd:string .
+
+
+#################################################################
 #    Classes
 #################################################################
 

@@ -76,9 +76,9 @@ INSERT DATA {{
             # Version blank node
             if "none" not in version_blanks:
                 version_blanks["none"] = f"cve:version_none"
-            if version != "*":
+            if version != "*" and version != "-":
                 if version not in version_blanks:
-                    version_blanks[version] = f"cve:version_{sanitize_for_blank_node(version)}"
+                    version_blanks[version] = f"cve:version_{sanitize_for_blank_node(version)}"        
             else:
                 if first_version != None:
                     if first_version not in version_blanks:
@@ -86,8 +86,8 @@ INSERT DATA {{
                 if last_version != None:
                     if last_version not in version_blanks:
                         version_blanks[last_version] = f"cve:version_{sanitize_for_blank_node(last_version)}"
-            first_version_id = version_blanks[version] if version != "*" else (version_blanks[first_version] if first_version != None else version_blanks["none"])
-            last_version_id = version_blanks["none"] if version != "*" else (version_blanks[last_version] if last_version != None else version_blanks["none"])
+            first_version_id = version_blanks[version] if version != "*" and version != "-" else (version_blanks[first_version] if first_version != None else version_blanks["none"])
+            last_version_id = version_blanks["none"] if version != "*" and version != "-" else (version_blanks[last_version] if last_version != None else version_blanks["none"])
 
             prod_lines.append(f"""    {prod_id} a cve:Product ;
                 cve:product_name "{product}" ;

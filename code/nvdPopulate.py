@@ -33,21 +33,27 @@ INSERT DATA {{
 
     # References
     ref_lines = []
-    ref_blanks = []
+    ref_blanks = {}
     for ref in references:
         source = ref.get("source", "unknown_source")
-        name = ref.get("tags", [source])[0]
-        ref_id = f"cve:ref_{sanitize_for_blank_node(name)}"
-        ref_blanks.append(ref_id)
         url = ref.get("url", "")
+        name = source + "_" + url
+        if name not in ref_blanks:
+            ref_blanks[name] = f"cve:ref_{sanitize_for_blank_node(name)}"
+        ref_id = ref_blanks[name]
         ref_lines.append(f"""    {ref_id} a cve:References ;
            cve:url "{url}" ;
            cve:ref_source "{source}" ;
            cve:ref_name "{name}" .""")
 
-    sparql += f"                cve:has_references {', '.join(ref_blanks)} .\n\n"
+    sparql += f"                cve:has_references "
+    
+    ref_blanks_aux = []
+    for name, blank in ref_blanks.items():
+        ref_blanks_aux.append(blank)
+    sparql += f"{', '.join(ref_blanks_aux)} .\n\n"
     sparql += "\n".join(ref_lines)
-
+    
     # Products and vendors
     if cpes:
         sparql += f"\n\n    cve:{cve_id} cve:has_affected_product "

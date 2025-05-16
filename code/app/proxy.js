@@ -10,7 +10,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/sparql', async (req, res) => {
   const query = req.query.query;
   if (!query) {
-    return res.status(400).json({ error: 'Query não fornecida' });
+    return res.status(400).json({ error: 'No query found' });
   }
 
   try {
@@ -25,18 +25,18 @@ app.get('/sparql', async (req, res) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Erro do Virtuoso:', errorText);
-      return res.status(response.status).json({ error: 'Erro ao buscar do Virtuoso', details: errorText });
+      console.error('Virtuoso Error:', errorText);
+      return res.status(response.status).json({ error: 'Error on fetching Virtuoso', details: errorText });
     }
 
     const data = await response.json();
     res.json(data);
   } catch (error) {
     console.error('Erro:', error);
-    res.status(500).json({ error: 'Erro interno ao buscar do Virtuoso' });
+    res.status(500).json({ error: 'Internal Error on fetching Virtuoso' });
   }
 });
 
 app.listen(3001, () => {
-  console.log('🟢 Proxy rodando em http://localhost:3001');
+  console.log('🟢 Proxy running in http://localhost:3001');
 });

@@ -92,7 +92,7 @@ function extractLocalName(uri) {
   * */
 
 function processLogDataToGraph(bindings) {
-  const nodesMap = new Map(); // Usando um Map para garantir a unicidade dos nós
+  const nodesMap = new Map(); // We use a Map to assure the unicity of the nodes
   const links = [];
 
   bindings.forEach(entry => {
@@ -101,7 +101,7 @@ function processLogDataToGraph(bindings) {
     const eventTypeURI = entry.type?.value;
     const eventType = extractLocalName(eventTypeURI);
 
-    // Se o nó ainda não foi adicionado ao Map
+    // If the node wasn't already added to the Map...
     if (!nodesMap.has(logId)) {
       const node = {
         id: logId,
@@ -109,12 +109,12 @@ function processLogDataToGraph(bindings) {
         type: eventType,
       };
 
-      // Campos comuns
+      // Common properties
       if (entry.timestamp) {
         node["timestamp"] = entry.timestamp.value;
       }
 
-      // Campos específicos por tipo
+      // Type properties
       if (eventType === "ActionEvent" && entry.action) {
         node["action"] = entry.action.value;
       }
@@ -132,11 +132,11 @@ function processLogDataToGraph(bindings) {
         if (entry.command) node["command"] = entry.command.value;
       }
 
-      // Adiciona o nó ao Map
+      // Adds the node to the map
       nodesMap.set(logId, node);
     }
 
-    // Se tiver pacote ligado
+    // If it has a package...
     const pkgName = entry.package_name?.value;
     const pkgVersion = entry.package_version?.value;
     const pkgArch = entry.package_architecture?.value;
@@ -144,7 +144,7 @@ function processLogDataToGraph(bindings) {
     if (pkgName) {
       const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
 
-      // Se o pacote ainda não foi adicionado ao Map
+      // If the package hasn't been already added to the map...
       if (!nodesMap.has(pkgId)) {
         const pkgNode = {
           id: pkgId,
@@ -154,11 +154,11 @@ function processLogDataToGraph(bindings) {
           "package_architecture": pkgArch
         };
 
-        // Adiciona o pacote ao Map
+        // Adds the package to the map
         nodesMap.set(pkgId, pkgNode);
       }
 
-      // Cria o link log → package
+      // Creates the link: log -> package
       links.push({
         source: logId,
         target: pkgId,
@@ -167,7 +167,7 @@ function processLogDataToGraph(bindings) {
     }
   });
 
-  // Converte o Map de volta para um array de nós
+  // Converts the map back to an array of nodes
   const nodes = Array.from(nodesMap.values());
 
   return {
@@ -179,8 +179,7 @@ function processLogDataToGraph(bindings) {
 
 
 
-// Função principal para executar o código
-
+// Main function
 function main() {
   fetchDataFromSPARQLEndPoint()
     .then(data => {
@@ -192,6 +191,7 @@ function main() {
       // graph.links.forEach(link => {
       //   console.log("Link:", link);
       // });
+      // console.log(encodeURIComponent(queryLog));
     })
     .catch(error => {
       console.error("Error fetching SPARQL data:", error);

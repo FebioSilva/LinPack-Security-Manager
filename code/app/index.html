@@ -2,9 +2,9 @@
 <html lang="pt">
 <head>
   <meta charset="UTF-8">
-  <title>Monitor de CVEs + Pacotes (com Propriedades)</title>
+  <title>LinPack System</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="../queries/queries.js"></script> <!-- Referência ao queries.js -->
+  <script src="./queries/query_all_logs.js"></script> <!-- Reference to queries.js -->
   <style>
     body { margin: 0; font-family: sans-serif; }
     svg { width: 100vw; height: 100vh; border: 1px solid #000000; }
@@ -28,7 +28,7 @@
   <svg></svg>
 
   <script>
-  // Função de arrasto (drag)
+  // Drag function
   function drag(simulation) {
     function dragstarted(event, d) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -53,8 +53,7 @@
       .on("end", dragended);
   }
 
-  // Função principal
-  // Função principal
+// Main function
 async function main() {
   try {
     const data = await fetchDataFromSPARQLEndPoint(queryLog); // Buscar os dados
@@ -107,7 +106,7 @@ async function main() {
       .attr("dx", 12)
       .attr("dy", ".35em");
 
-    // Atualiza as posições dos links e nós a cada "tick" da simulação
+    // Updates the link and node positions with each "tick" of the simulation
     simulation.on("tick", () => {
       link
         .attr("x1", d => d.source.x)
@@ -118,38 +117,38 @@ async function main() {
       node.attr("transform", d => `translate(${d.x},${d.y})`);
     });
 
-    // Tooltip para exibir as propriedades dos nós
+    // Tooltip to show node properties
     const tooltip = d3.select("#tooltip");
 
     node
       .on("mouseover", (event, d) => {
         let html = `<strong>${d.id}</strong>`;
 
-        // Exibe propriedades conforme o tipo de nó
+        // Shows properties based on the node type
         if (d.type === "Package") {
-          // Exibe propriedades do pacote
+          // Shows package properties
           if (d.package_name && d.current_version && d.package_architecture) {
             html += `<br><em>Package Name:</em> ${d.package_name}<br><em>Version:</em> ${d.current_version}<br><em>Architecture:</em> ${d.package_architecture}`;
           } else {
             html += `<br><em>Package Details:</em> No details available`;
           }
         } else if (d.type === "ActionEvent") {
-          // Exibe propriedades do ActionEvent
+          // Shows properties of ActionEvent
           if (d.action) {
             html += `<br><em>Action:</em> ${d.action}`;
           }
         } else if (d.type === "StateEvent") {
-          // Exibe propriedades do StateEvent
+          // Shows properties of StateEvent
           if (d.state) {
             html += `<br><em>State:</em> ${d.state}`;
           }
         } else if (d.type === "ConffileEvent") {
-          // Exibe propriedades do ConfFileEvent
+          // Shows properties of ConfFileEvent
           if (d.decision) {
             html += `<br><em>Decision:</em> ${d.decision}`;
           } 
         } else if (d.type === "StartupEvent") {
-          // Exibe propriedades do StartUpEvent
+          // Shows properties of StartUpEvent
           if (d.context) {
             html += `<br><em>Context:</em> ${d.context}`;
           }
@@ -158,7 +157,7 @@ async function main() {
           }
         }
 
-        // Adiciona o timestamp para logs
+        // Adds the timestamp for logs
         if (d.timestamp) {
           html += `<br><em>Timestamp:</em> ${d.timestamp}`;
         }
@@ -183,7 +182,7 @@ async function main() {
   }
 }
 
-main(); // Executa a função principal
+main(); // Executes the main function
 
   </script>
 

@@ -40,6 +40,13 @@
          rdfs:comment "Indicates which CVEs affect the product" .
 
 
+###  http://purl.org/cyber/cve#has_cve_affecting_product
+:has_cve_affecting_product rdf:type owl:ObjectProperty ;
+                           rdfs:subPropertyOf owl:topObjectProperty ;
+                           rdfs:domain :Version ;
+                           rdfs:range :CVE .
+
+
 ###  http://purl.org/cyber/cve#has_first_version
 :has_first_version rdf:type owl:ObjectProperty ;
                    rdfs:subPropertyOf owl:topObjectProperty ;
@@ -252,6 +259,14 @@ owl:topDataProperty rdfs:domain :Version ;
 :Product rdf:type owl:Class ;
          rdfs:subClassOf :CVEThing ,
                          [ rdf:type owl:Restriction ;
+                           owl:onProperty :has_first_version ;
+                           owl:someValuesFrom :Version
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :has_last_version ;
+                           owl:someValuesFrom :Version
+                         ] ,
+                         [ rdf:type owl:Restriction ;
                            owl:onProperty :has_vendor ;
                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onClass :Vendor
@@ -307,12 +322,8 @@ owl:topDataProperty rdfs:domain :Version ;
 :Version rdf:type owl:Class ;
          rdfs:subClassOf :CVEThing ,
                          [ rdf:type owl:Restriction ;
-                           owl:onProperty :has_first_version ;
-                           owl:someValuesFrom :Version
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :has_last_version ;
-                           owl:someValuesFrom :Version
+                           owl:onProperty :has_cve_affecting_product ;
+                           owl:someValuesFrom :CVE
                          ] ,
                          [ rdf:type owl:Restriction ;
                            owl:onProperty :version_major ;

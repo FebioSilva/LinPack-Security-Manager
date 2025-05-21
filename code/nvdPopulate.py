@@ -126,13 +126,15 @@ INSERT DATA {{
                 version_lines.append(f"""    {blank} a cve:Version ;
                     cve:version_major {major_part} ;
                     cve:version_minor {minor_part} ;
-                    cve:version_patch {patch_part} .""")
+                    cve:version_patch {patch_part} ;
+                    cve:has_cve_affecting_product cve:{cve_id} .""")
             
             else:
                 version_lines.append(f"""    {blank} a cve:Version ;
                     cve:version_major 0 ;
                     cve:version_minor 0 ;
-                    cve:version_patch 0 .""")
+                    cve:version_patch 0 ;
+                    cve:has_cve_affecting_product cve:{cve_id} .""")
 
         sparql += "\n\n" + "\n".join(version_lines)    
 

@@ -46,7 +46,62 @@ WHERE {
 }
 ORDER BY ?timestamp`
 
-const endpoint = 'http://localhost:3001/sparql?query=' + encodeURIComponent(queryLog);
+const queryCVE=`PREFIX cve: <http://purl.org/cyber/cve#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
+       ?product ?product_name
+       ?vendor ?vendor_name
+       ?ref ?ref_url ?ref_source ?ref_name
+       ?first_version ?last_version
+       ?first_version_major ?first_version_minor ?first_version_patch
+       ?last_version_major ?last_version_minor ?last_version_patch
+FROM <http://localhost:8890/linpack>
+WHERE {
+  # CVE entity
+  ?cve a cve:CVE ;
+       cve:description ?description ;
+       cve:base_score ?base_score ;
+       cve:base_severity ?base_severity ;
+       cve:cvss_version ?cvss_version ;
+       cve:cvss_code ?cvss_code ;
+       cve:has_references ?ref ;
+       cve:has_affected_product ?product .
+
+  # Reference info
+  ?ref a cve:References ;
+       cve:url ?ref_url ;
+       cve:ref_source ?ref_source ;
+       cve:ref_name ?ref_name .
+
+  # Product info
+  ?product a cve:Product ;
+           cve:product_name ?product_name ;
+           cve:has_vendor ?vendor ;
+           cve:has_first_version ?first_version ;
+           cve:has_last_version ?last_version ;
+           cve:has_cve ?cve .  # <=== Restriction: product has this CVE
+
+  # Vendor info
+  ?vendor a cve:Vendor ;
+          cve:vendor_name ?vendor_name .
+
+  # First version details
+  ?first_version a cve:Version ;
+                 cve:version_major ?first_version_major ;
+                 cve:version_minor ?first_version_minor ;
+                 cve:version_patch ?first_version_patch ;
+                 cve:has_cve_affecting_product ?cve .  # <=== Restriction: version tied to this CVE
+
+  # Last version details
+  ?last_version a cve:Version ;
+                cve:version_major ?last_version_major ;
+                cve:version_minor ?last_version_minor ;
+                cve:version_patch ?last_version_patch ;
+                cve:has_cve_affecting_product ?cve .  # <=== Restriction: version tied to this CVE
+}`
+
+
 
 /**
   * Fetch data from SPARQL endpoint
@@ -54,7 +109,8 @@ const endpoint = 'http://localhost:3001/sparql?query=' + encodeURIComponent(quer
   * @returns {Promise<Array>} - A promise that resolves to the results of the query
  */
 
-async function fetchDataFromSPARQLEndPoint() {
+async function fetchDataFromSPARQLEndPoint(query) {
+  const endpoint = 'http://localhost:3001/sparql?query=' + encodeURIComponent(query);
   const response = await fetch(endpoint, {
     method: 'GET',
     headers: {
@@ -176,15 +232,170 @@ function processLogDataToGraph(bindings) {
   };
 }
 
+function processCVEDataToGraph(bindings) {
+  const nodesMap = new Map();
+  const links = [];
+
+  bindings.forEach(entry => {
+    const cveUri = entry.cve.value;
+    const cveId = extractLocalName(cveUri);
+
+    // Nodo CVE
+    if (!nodesMap.has(cveId)) {
+      nodesMap.set(cveId, {
+        id: cveId,
+        type: "CVE",
+        uri: cveUri,
+        description: entry.description?.value,
+        base_score: entry.base_score?.value,
+        base_severity: entry.base_severity?.value,
+        cvss_version: entry.cvss_version?.value,
+        cvss_code: entry.cvss_code?.value,
+      });
+    }
+
+    // Produto afetado
+    const productName = entry.product_name?.value;
+    const vendorName = entry.vendor_name?.value;
+    const productId = `prod_${productName}`;
+
+    if (productName && !nodesMap.has(productId)) {
+      nodesMap.set(productId, {
+        id: productId,
+        type: "Product",
+        name: productName,
+        vendor: vendorName
+      });
+    }
+
+    // Link CVE -> Produto
+    if (productName) {
+      links.push({
+        source: cveId,
+        target: productId,
+        type: "affects_product"
+      });
+    }
+
+    // Versões
+    const firstVersionId = entry.first_version?.value;
+    const lastVersionId = entry.last_version?.value;
+
+    if (firstVersionId) {
+      const versionId = extractLocalName(firstVersionId);
+      if (!nodesMap.has(versionId)) {
+        nodesMap.set(versionId, {
+          id: versionId,
+          type: "Version",
+          major: entry.first_version_major?.value,
+          minor: entry.first_version_minor?.value,
+          patch: entry.first_version_patch?.value
+        });
+      }
+      links.push({
+        source: productId,
+        target: versionId,
+        type: "has_first_version"
+      });
+
+      // Link versão para CVE (has_cve_affecting_product)
+      links.push({
+        source: versionId,
+        target: cveId,
+        type: "has_cve_affecting_product"
+      });
+    }
+
+    if (lastVersionId) {
+      const versionId = extractLocalName(lastVersionId);
+      if (!nodesMap.has(versionId)) {
+        nodesMap.set(versionId, {
+          id: versionId,
+          type: "Version",
+          major: entry.last_version_major?.value,
+          minor: entry.last_version_minor?.value,
+          patch: entry.last_version_patch?.value
+        });
+      }
+      links.push({
+        source: productId,
+        target: versionId,
+        type: "has_last_version"
+      });
+
+      // Link versão para CVE (has_cve_affecting_product)
+      links.push({
+        source: versionId,
+        target: cveId,
+        type: "has_cve_affecting_product"
+      });
+    }
+
+    // Referências
+    const refUri = entry.ref?.value;
+    if (refUri) {
+      const refId = extractLocalName(refUri);
+      if (!nodesMap.has(refId)) {
+        nodesMap.set(refId, {
+          id: refId,
+          type: "References",
+          name: entry.ref_name?.value,
+          source: entry.ref_source?.value,
+          url: entry.ref_url?.value
+        });
+      }
+      links.push({
+        source: cveId,
+        target: refId,
+        type: "has_references"
+      });
+    }
+  });
+
+  return {
+    nodes: Array.from(nodesMap.values()),
+    links
+  };
+}
+
+
+
+function mergeGraphs(graph1, graph2) {
+  const nodesMap = new Map();
+
+  // Adiciona nós do grafo 1
+  graph1.nodes.forEach(node => nodesMap.set(node.id, node));
+  // Adiciona nós do grafo 2 (sem sobrescrever)
+  graph2.nodes.forEach(node => {
+    if (!nodesMap.has(node.id)) {
+      nodesMap.set(node.id, node);
+    }
+  });
+
+  const combinedNodes = Array.from(nodesMap.values());
+  const combinedLinks = [...graph1.links, ...graph2.links];
+
+  return {
+    nodes: combinedNodes,
+    links: combinedLinks
+  };
+}
+
 
 
 
 // Main function
 function main() {
-  fetchDataFromSPARQLEndPoint()
+  fetchDataFromSPARQLEndPoint(queryCVE)
     .then(data => {
-      console.log("Fetched data:", data);
-      const graph = processLogDataToGraph(data);
+      //console.log("Fetched data:", data);
+      const graph = processCVEDataToGraph(data)
+      graph.nodes.forEach(node => {
+        if (node.type === "Version") {
+          console.log("Version Node:", node);
+        }
+      });
+      // const graph = processLogDataToGraph(data);
       // graph.nodes.forEach(node => {
       //   console.log("Node:", node);
       // });

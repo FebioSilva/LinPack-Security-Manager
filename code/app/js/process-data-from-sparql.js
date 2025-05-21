@@ -101,6 +101,36 @@ WHERE {
                 cve:has_cve_affecting_product ?cve .  # <=== Restriction: version tied to this CVE
 }`
 
+const highestSeverityCVEsQuery = `
+PREFIX cve: <http://purl.org/cyber/cve#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
+FROM <http://localhost:8890/linpack>
+WHERE {
+  ?cve a cve:CVE ;
+       cve:description ?description ;
+       cve:base_score ?base_score ;
+       cve:base_severity ?base_severity ;
+       cve:cvss_version ?cvss_version ;
+       cve:cvss_code ?cvss_code .
+}
+ORDER BY DESC(?base_score)
+LIMIT 5
+`
+const countCVEsPerProductQuery = `
+PREFIX : <http://purl.org/cyber/cve#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?product ?productName (COUNT(?cve) AS ?numCVEs)
+WHERE {
+  ?product rdf:type :Product .
+  ?product :product_name ?productName .
+  ?product :has_cve ?cve .
+}
+GROUP BY ?product ?productName
+ORDER BY DESC(?numCVEs)
+`
 
 
 /**
@@ -358,6 +388,13 @@ function processCVEDataToGraph(bindings) {
   };
 }
 
+// Extract needed data for bubbles: productName and count
+function processCountData(bindings) {
+  return bindings.map(d => ({
+    productName: d.productName.value,
+    numCVEs: +d.numCVEs.value
+  }));
+}
 
 
 function mergeGraphs(graph1, graph2) {

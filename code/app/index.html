@@ -4,10 +4,13 @@
   <meta charset="UTF-8" />
   <title>LinPack System</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="./queries/query_all_logs.js"></script> <!-- Define queryLog, processLogDataToGraph, etc -->
+  <script src="./js/ui-interactions.js"></script> 
+  <script src="./js/graph-render.js"></script>
+  <script src="./js/process-data-from-sparql.js"></script>
+  <script src="./js/bubble-chart-render.js"></script>
   <style>
     body { margin: 0; font-family: sans-serif; }
-    svg { width: 100vw; height: 100vh; border: 1px solid #000000; }
+    svg { width: 100vw; height: 100vh; }
     .node circle { stroke: #fff; stroke-width: 1.5px; }
     .node text { pointer-events: none; font-size: 12px; }
     line { stroke: #999; stroke-opacity: 0.6; }
@@ -24,205 +27,58 @@
     font-size: 12px;
     display: none;
   "></div>
+  <div style="position: fixed; top: 10px; left: 10px; background: #eee; padding: 8px; border-radius: 6px; z-index: 10;">
+  <label for="viewSelect">Visualização: </label>
+  <select id="viewSelect">
+    <option value="graph">Grafo</option>
+    <option value="bubble">Bubble Chart</option>
+  </select>
+</div>
+
 
   <svg></svg>
 
   <script>
-  // Drag functions (sem alterações)
-  function drag(simulation) {
-    function dragstarted(event, d) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      d.fx = d.x;
-      d.fy = d.y;
-    }
-    function dragged(event, d) {
-      d.fx = event.x;
-      d.fy = event.y;
-    }
-    function dragended(event, d) {
-      if (!event.active) simulation.alphaTarget(0);
-      d.fx = null;
-      d.fy = null;
-    }
-    return d3.drag()
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended);
-  }
+ 
+async function main() {
+  try {
+    const [logData, cveData, rawData] = await Promise.all([
+      fetchDataFromSPARQLEndPoint(queryLog),
+      fetchDataFromSPARQLEndPoint(queryCVE),
+      fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery)
+    ]);
 
-  async function main() {
-    try {
-      // Busca os dados das duas fontes
-      const [logData, cveData] = await Promise.all([
-        fetchDataFromSPARQLEndPoint(queryLog),
-        fetchDataFromSPARQLEndPoint(queryCVE)
-      ]);
+    const logGraph = processLogDataToGraph(logData);
+    const cveGraph = processCVEDataToGraph(cveData);
+    const { nodes, links } = mergeGraphs(logGraph, cveGraph);
 
-      // Processa os dados para grafo
-      const logGraph = processLogDataToGraph(logData);
-      const cveGraph = processCVEDataToGraph(cveData);
+    const processedData = processCountData(rawData);
 
-      // Junta nós e links, cuidando de evitar duplicados
-      const nodesMap = new Map();
-      const links = [];
+    renderGraph(nodes, links);
 
-      // Função auxiliar para adicionar nós, evita duplicados por id
-      function addNodes(nodes) {
-        nodes.forEach(n => {
-          if (!nodesMap.has(n.id)) {
-            nodesMap.set(n.id, n);
-          }
-        });
-      }
-
-      // Adiciona nós de ambos
-      addNodes(logGraph.nodes);
-      addNodes(cveGraph.nodes);
-
-      // Junta links
-      links.push(...logGraph.links);
-      links.push(...cveGraph.links);
-
-      const nodes = Array.from(nodesMap.values());
-
-      // D3 setup
+    d3.select("#viewSelect").on("change", (event) => {
+      const view = event.target.value;
       const svg = d3.select("svg");
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      svg.selectAll("*").remove(); // Limpa SVG antes de desenhar
-
-      const graphGroup = svg.append("g");
-
-      const zoom = d3.zoom()
-        .scaleExtent([0.1, 4])
-        .on("zoom", (event) => {
-          graphGroup.attr("transform", event.transform);
-        });
-      svg.call(zoom);
-
-      const simulation = d3.forceSimulation(nodes)
-        .force("link", d3.forceLink(links).id(d => d.id).distance(200)) // Aumenta distância entre nós
-        .force("charge", d3.forceManyBody().strength(-300))             // Repulsão maior para mais separação
-        .force("center", d3.forceCenter(width / 2, height / 2))
-        .force("collide", d3.forceCollide().radius(50))                 // Evita sobreposição
-        .stop(); // Simulação manual
       
-      const link = graphGroup.append("g")
-        .attr("stroke", "#aaa")
-        .selectAll("line")
-        .data(links)
-        .join("line");
+      // Resetar zoom antes de limpar e redesenhar
+      svg.call(d3.zoom().transform, d3.zoomIdentity);
+      
+      svg.selectAll("*").remove();
 
-      const node = graphGroup.append("g")
-        .selectAll("g")
-        .data(nodes)
-        .join("g")
-        .attr("class", "node")
-        .call(drag(simulation));
+      if (view === "graph") {
+        renderGraph(nodes, links);
+      } else if (view === "bubble") {
+        renderBubbleChart(processedData);
+      }
+    });
 
-      // Colorir por tipo genérico, adiciona cores para logs e CVEs
-      node.append("circle")
-        .attr("r", 10)
-        .attr("fill", d => {
-          switch(d.type) {
-            case "Package": return "steelblue";
-            case "ActionEvent": return "green";
-            case "StateEvent": return "darkorange";
-            case "ConffileEvent": return "purple";
-            case "StartupEvent": return "brown";
-            case "CVE": return "crimson";
-            case "Product": return "darkcyan";
-            case "Version": return "goldenrod";
-            case "Reference": return "gray";
-            default: return "lightgray";
-          }
-        });
-
-      node.append("text")
-        .text(d => d.id)
-        .attr("dx", 12)
-        .attr("dy", ".35em");
-
-      simulation.on("tick", () => {
-        link
-          .attr("x1", d => d.source.x)
-          .attr("y1", d => d.source.y)
-          .attr("x2", d => d.target.x)
-          .attr("y2", d => d.target.y);
-
-        node.attr("transform", d => `translate(${d.x},${d.y})`);
-      });
-
-      const tooltip = d3.select("#tooltip");
-
-      // Tooltip com lógica para ambos tipos (logs e CVEs)
-      node
-        .on("mouseover", (event, d) => {
-          let html = `<strong>${d.id}</strong><br>Type: <em>${d.type}</em>`;
-
-          // Propriedades específicas por tipo (logs)
-          if (d.type === "Package") {
-            if (d.package_name && d.current_version && d.package_architecture) {
-              html += `<br><em>Package Name:</em> ${d.package_name}<br><em>Version:</em> ${d.current_version}<br><em>Architecture:</em> ${d.package_architecture}`;
-            }
-          } else if (d.type === "ActionEvent") {
-            if (d.action) html += `<br><em>Action:</em> ${d.action}`;
-          } else if (d.type === "StateEvent") {
-            if (d.state) html += `<br><em>State:</em> ${d.state}`;
-          } else if (d.type === "ConffileEvent") {
-            if (d.decision) html += `<br><em>Decision:</em> ${d.decision}`;
-          } else if (d.type === "StartupEvent") {
-            if (d.context) html += `<br><em>Context:</em> ${d.context}`;
-            if (d.command) html += `<br><em>Command:</em> ${d.command}`;
-          }
-
-          // Propriedades CVE
-          if (d.type === "CVE") {
-            if (d.description) html += `<br><em>Description:</em> ${d.description}`;
-            if (d.base_score) html += `<br><em>Base Score:</em> ${d.base_score}`;
-            if (d.base_severity) html += `<br><em>Base Severity:</em> ${d.base_severity}`;
-            if (d.cvss_version) html += `<br><em>CVSS Version:</em> ${d.cvss_version}`;
-            if (d.cvss_code) html += `<br><em>CVSS Code:</em> ${d.cvss_code}`;
-          } else if (d.type === "Product") {
-            if (d.name) html += `<br><em>Product Name:</em> ${d.name}`;
-            if (d.vendor) html += `<br><em>Vendor:</em> ${d.vendor}`;
-          } else if (d.type === "Version") {
-            if (d.major) html += `<br><em>Version Major:</em> ${d.major}`;
-            if (d.minor) html += `<br><em>Version Minor:</em> ${d.minor}`;
-            if (d.patch) html += `<br><em>Version Patch:</em> ${d.patch}`;
-          } else if (d.type === "Reference") {
-            if (d.name) html += `<br><em>Reference Name:</em> ${d.name}`;
-            if (d.source) html += `<br><em>Reference Source:</em> ${d.source}`;
-            if (d.url) html += `<br><em>URL:</em> <a href="${d.url}" target="_blank" style="color:#fff;">${d.url}</a>`;
-          }
-
-          // Timestamp comum (logs)
-          if (d.timestamp) {
-            html += `<br><em>Timestamp:</em> ${d.timestamp}`;
-          }
-
-          tooltip
-            .html(html)
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY + 10) + "px")
-            .style("display", "block");
-        })
-        .on("mousemove", event => {
-          tooltip
-            .style("left", (event.pageX + 10) + "px")
-            .style("top", (event.pageY + 10) + "px");
-        })
-        .on("mouseout", () => {
-          tooltip.style("display", "none");
-        });
-
-    } catch (error) {
-      console.error("Error fetching and processing data:", error);
-    }
+  } catch (err) {
+    console.error("Erro ao carregar e processar dados:", err);
   }
+}
 
-  main();
+main();
+
   </script>
 </body>
 </html>

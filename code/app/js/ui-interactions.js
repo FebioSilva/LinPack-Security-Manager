@@ -18,3 +18,23 @@ function drag(simulation) {
       .on("drag", dragged)
       .on("end", dragended);
   }
+
+  function expandNode(productNode, childNodes, childLinks, simulation, svg) {
+  const angleStep = (2 * Math.PI) / childNodes.length;
+  const radius = 60;
+
+  childNodes.forEach((node, i) => {
+    const angle = i * angleStep;
+    node.x = productNode.x + radius * Math.cos(angle);
+    node.y = productNode.y + radius * Math.sin(angle);
+  });
+
+  // Atualizar os dados da simulação
+  const allNodes = simulation.nodes().concat(childNodes);
+  const allLinks = simulation.force("link").links().concat(childLinks);
+
+  simulation.nodes(allNodes);
+  simulation.force("link").links(allLinks);
+
+  simulation.alpha(1).restart(); // Reiniciar a simulação para reorganizar
+}

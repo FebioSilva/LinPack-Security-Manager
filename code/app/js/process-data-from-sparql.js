@@ -52,7 +52,6 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
        ?product ?product_name
        ?vendor ?vendor_name
-       ?ref ?ref_url ?ref_source ?ref_name
        ?first_version ?last_version
        ?first_version_major ?first_version_minor ?first_version_patch
        ?last_version_major ?last_version_minor ?last_version_patch
@@ -65,14 +64,7 @@ WHERE {
        cve:base_severity ?base_severity ;
        cve:cvss_version ?cvss_version ;
        cve:cvss_code ?cvss_code ;
-       cve:has_references ?ref ;
        cve:has_affected_product ?product .
-
-  # Reference info
-  ?ref a cve:References ;
-       cve:url ?ref_url ;
-       cve:ref_source ?ref_source ;
-       cve:ref_name ?ref_name .
 
   # Product info
   ?product a cve:Product ;
@@ -266,6 +258,9 @@ function processCVEDataToGraph(bindings) {
   const nodesMap = new Map();
   const links = [];
 
+  // Map para relacionar produto -> versões (para evitar duplicação)
+  const productVersionsMap = new Map();
+
   bindings.forEach(entry => {
     const cveUri = entry.cve.value;
     const cveId = extractLocalName(cveUri);
@@ -280,9 +275,11 @@ function processCVEDataToGraph(bindings) {
         base_score: entry.base_score?.value,
         base_severity: entry.base_severity?.value,
         cvss_version: entry.cvss_version?.value,
-        cvss_code: entry.cvss_code?.value,
+        cvss_code: entry.cvss_code?.value
       });
     }
+
+    const cveNode = nodesMap.get(cveId);
 
     // Produto afetado
     const productName = entry.product_name?.value;
@@ -296,97 +293,64 @@ function processCVEDataToGraph(bindings) {
         name: productName,
         vendor: vendorName
       });
+      productVersionsMap.set(productId, new Map()); // Inicializa mapa de versões para o produto
     }
 
-    // Link CVE -> Produto
+    // Versões (normalmente first e last versões, que indicam intervalo)
+    const versionData = [
+      {
+        versionUri: entry.first_version?.value,
+        major: entry.first_version_major?.value,
+        minor: entry.first_version_minor?.value,
+        patch: entry.first_version_patch?.value,
+      },
+      {
+        versionUri: entry.last_version?.value,
+        major: entry.last_version_major?.value,
+        minor: entry.last_version_minor?.value,
+        patch: entry.last_version_patch?.value,
+      }
+    ];
+
     if (productName) {
-      links.push({
-        source: cveId,
-        target: productId,
-        type: "affects_product"
-      });
-    }
+      // Para cada versão do CVE, criamos nó de versão (se não existir)
+      versionData.forEach(({ versionUri, major, minor, patch }) => {
+        if (versionUri) {
+          const versionId = extractLocalName(versionUri);
 
-    // Versões
-    const firstVersionId = entry.first_version?.value;
-    const lastVersionId = entry.last_version?.value;
+          // Verifica se versão já foi adicionada para esse produto
+          if (!productVersionsMap.get(productId).has(versionId)) {
+            nodesMap.set(versionId, {
+              id: versionId,
+              type: "Version",
+              major,
+              minor,
+              patch
+            });
 
-    if (firstVersionId) {
-      const versionId = extractLocalName(firstVersionId);
-      if (!nodesMap.has(versionId)) {
-        nodesMap.set(versionId, {
-          id: versionId,
-          type: "Version",
-          major: entry.first_version_major?.value,
-          minor: entry.first_version_minor?.value,
-          patch: entry.first_version_patch?.value
-        });
-      }
-      links.push({
-        source: productId,
-        target: versionId,
-        type: "has_first_version"
-      });
+            // Marca que essa versão pertence ao produto
+            productVersionsMap.get(productId).set(versionId, true);
 
-      // Link versão para CVE (has_cve_affecting_product)
-      links.push({
-        source: versionId,
-        target: cveId,
-        type: "has_cve_affecting_product"
-      });
-    }
+            // Link produto -> versão
+            links.push({ source: productId, target: versionId, type: "has_version" });
+          }
 
-    if (lastVersionId) {
-      const versionId = extractLocalName(lastVersionId);
-      if (!nodesMap.has(versionId)) {
-        nodesMap.set(versionId, {
-          id: versionId,
-          type: "Version",
-          major: entry.last_version_major?.value,
-          minor: entry.last_version_minor?.value,
-          patch: entry.last_version_patch?.value
-        });
-      }
-      links.push({
-        source: productId,
-        target: versionId,
-        type: "has_last_version"
+          // Link versão -> CVE
+          links.push({ source: versionId, target: cveId, type: "has_cve_affecting_product" });
+        }
       });
 
-      // Link versão para CVE (has_cve_affecting_product)
-      links.push({
-        source: versionId,
-        target: cveId,
-        type: "has_cve_affecting_product"
-      });
-    }
-
-    // Referências
-    const refUri = entry.ref?.value;
-    if (refUri) {
-      const refId = extractLocalName(refUri);
-      if (!nodesMap.has(refId)) {
-        nodesMap.set(refId, {
-          id: refId,
-          type: "References",
-          name: entry.ref_name?.value,
-          source: entry.ref_source?.value,
-          url: entry.ref_url?.value
-        });
-      }
-      links.push({
-        source: cveId,
-        target: refId,
-        type: "has_references"
-      });
+      // Opcional: link direto produto -> CVE (pode ajudar, mas pode causar clutter)
+      // links.push({ source: productId, target: cveId, type: "affects_product" });
     }
   });
 
   return {
     nodes: Array.from(nodesMap.values()),
-    links
+    links: links
   };
 }
+
 
 // Extract needed data for bubbles: productName and count
 function processCountData(bindings) {
@@ -398,25 +362,44 @@ function processCountData(bindings) {
 
 
 function mergeGraphs(graph1, graph2) {
-  const nodesMap = new Map();
+  const nodeMap = new Map();
+  const linkSet = new Set();
 
-  // Adiciona nós do grafo 1
-  graph1.nodes.forEach(node => nodesMap.set(node.id, node));
-  // Adiciona nós do grafo 2 (sem sobrescrever)
-  graph2.nodes.forEach(node => {
-    if (!nodesMap.has(node.id)) {
-      nodesMap.set(node.id, node);
+  // Adiciona todos os nós do primeiro grafo
+  for (const node of graph1.nodes) {
+    nodeMap.set(node.id, { ...node });
+  }
+
+  // Adiciona nós do segundo grafo, se não existirem
+  for (const node of graph2.nodes) {
+    if (!nodeMap.has(node.id)) {
+      nodeMap.set(node.id, { ...node });
     }
-  });
+  }
 
-  const combinedNodes = Array.from(nodesMap.values());
-  const combinedLinks = [...graph1.links, ...graph2.links];
+  // Links do primeiro grafo
+  for (const link of graph1.links) {
+    const key = `${link.source}->${link.target}`;
+    linkSet.add(key);
+  }
+
+  // Links do segundo grafo, evitando duplicatas
+  for (const link of graph2.links) {
+    const key = `${link.source}->${link.target}`;
+    if (!linkSet.has(key)) {
+      linkSet.add(key);
+    }
+  }
 
   return {
-    nodes: combinedNodes,
-    links: combinedLinks
+    nodes: Array.from(nodeMap.values()),
+    links: Array.from(linkSet).map(key => {
+      const [source, target] = key.split("->");
+      return { source, target };
+    })
   };
 }
+
 
 
 
@@ -445,5 +428,6 @@ function main() {
       console.error("Error fetching SPARQL data:", error);
     });
 }
+
 
 main();

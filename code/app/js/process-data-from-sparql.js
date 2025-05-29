@@ -408,11 +408,11 @@ function mergeGraphs(graph1, graph2) {
 function main() {
   fetchDataFromSPARQLEndPoint(queryCVE)
     .then(data => {
-      //console.log("Fetched data:", data);
+      console.log("Fetched data:", data);
       const graph = processCVEDataToGraph(data)
       graph.nodes.forEach(node => {
         if (node.type === "Version") {
-          console.log("Version Node:", node);
+          //console.log("Version Node:", node);
         }
       });
       // const graph = processLogDataToGraph(data);

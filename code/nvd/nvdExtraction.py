@@ -73,8 +73,10 @@ def fetch_cves_for_package(package_name):
                         for cpe_match in node['cpeMatch']:
                             cpe_parts = cpe_match.get(
                                 'criteria', '').split(':')
-                            cpe_version_start = cpe_match.get('versionStartIncluding', None)
-                            cpe_version_end = cpe_match.get('versionEndExcluding', None)
+                            cpe_version_start = cpe_match.get(
+                                'versionStartIncluding', None)
+                            cpe_version_end = cpe_match.get(
+                                'versionEndExcluding', None)
                             cpe_list.append({
                                 "part": cpe_parts[1] if len(cpe_parts) > 1 else None,
                                 "vendor": cpe_parts[3] if len(cpe_parts) > 3 else None,

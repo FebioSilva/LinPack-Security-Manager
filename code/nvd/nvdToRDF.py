@@ -14,8 +14,10 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
     cve_id = cve_obj["id"]
-    description = cve_obj["description"].replace('\\', '\\\\').replace('"', '\\"')
-    single_line_description = "\\n".join(line.strip() for line in description.splitlines() if line.strip())
+    description = cve_obj["description"].replace(
+        '\\', '\\\\').replace('"', '\\"')
+    single_line_description = "\\n".join(
+        line.strip() for line in description.splitlines() if line.strip())
     severity = cve_obj["severity"]
     references = cve_obj["references"]
     cpes = cve_obj["cpe"]
@@ -47,13 +49,13 @@ INSERT DATA {{
            cve:ref_name "{name}" .""")
 
     sparql += f"                cve:has_references "
-    
+
     ref_blanks_aux = []
     for name, blank in ref_blanks.items():
         ref_blanks_aux.append(blank)
     sparql += f"{', '.join(ref_blanks_aux)} .\n\n"
     sparql += "\n".join(ref_lines)
-    
+
     # Products and vendors
     if cpes:
         sparql += f"\n\n    cve:{cve_id} cve:has_affected_product "
@@ -76,7 +78,8 @@ INSERT DATA {{
 
             # Vendor blank node
             if vendor not in vendor_blanks:
-                vendor_blanks[vendor] = {"vendor": f"cve:vendor_{sanitize_for_blank_node(vendor)}", "product": prod_id}
+                vendor_blanks[vendor] = {
+                    "vendor": f"cve:vendor_{sanitize_for_blank_node(vendor)}", "product": prod_id}
             vendor_id = vendor_blanks[vendor]["vendor"]
 
             # Version blank node
@@ -84,16 +87,20 @@ INSERT DATA {{
                 version_blanks["none"] = f"cve:version_none"
             if version != "*" and version != "-":
                 if version not in version_blanks:
-                    version_blanks[version] = f"cve:version_{sanitize_for_blank_node(version)}"        
+                    version_blanks[version] = f"cve:version_{sanitize_for_blank_node(version)}"
             else:
                 if first_version != None:
                     if first_version not in version_blanks:
-                        version_blanks[first_version] = f"cve:version_{sanitize_for_blank_node(first_version)}"
+                        version_blanks[
+                            first_version] = f"cve:version_{sanitize_for_blank_node(first_version)}"
                 if last_version != None:
                     if last_version not in version_blanks:
-                        version_blanks[last_version] = f"cve:version_{sanitize_for_blank_node(last_version)}"
-            first_version_id = version_blanks[version] if version != "*" and version != "-" else (version_blanks[first_version] if first_version != None else version_blanks["none"])
-            last_version_id = version_blanks["none"] if version != "*" and version != "-" else (version_blanks[last_version] if last_version != None else version_blanks["none"])
+                        version_blanks[
+                            last_version] = f"cve:version_{sanitize_for_blank_node(last_version)}"
+            first_version_id = version_blanks[version] if version != "*" and version != "-" else (
+                version_blanks[first_version] if first_version != None else version_blanks["none"])
+            last_version_id = version_blanks["none"] if version != "*" and version != "-" else (
+                version_blanks[last_version] if last_version != None else version_blanks["none"])
 
             prod_lines.append(f"""    {prod_id} a cve:Product ;
                 cve:product_name "{product}" ;
@@ -101,7 +108,7 @@ INSERT DATA {{
                 cve:has_vendor {vendor_id} ;
                 cve:has_first_version {first_version_id} ;
                 cve:has_last_version {last_version_id} .""")
-        
+
         prod_blanks_aux = []
         for product, blank in prod_blanks.items():
             prod_blanks_aux.append(blank)
@@ -122,13 +129,14 @@ INSERT DATA {{
                 version_parts = version.split(".")
                 major_part = int(version_parts[0])
                 minor_part = int(version_parts[1])
-                patch_part = int(version_parts[2]) if len(version_parts) == 3 else 0
+                patch_part = int(version_parts[2]) if len(
+                    version_parts) == 3 else 0
                 version_lines.append(f"""    {blank} a cve:Version ;
                     cve:version_major {major_part} ;
                     cve:version_minor {minor_part} ;
                     cve:version_patch {patch_part} ;
                     cve:has_cve_affecting_product cve:{cve_id} .""")
-            
+
             else:
                 version_lines.append(f"""    {blank} a cve:Version ;
                     cve:version_major 0 ;
@@ -136,7 +144,7 @@ INSERT DATA {{
                     cve:version_patch 0 ;
                     cve:has_cve_affecting_product cve:{cve_id} .""")
 
-        sparql += "\n\n" + "\n".join(version_lines)    
+        sparql += "\n\n" + "\n".join(version_lines)
 
     sparql += "\n  }\n}"
     return sparql
@@ -162,8 +170,10 @@ if __name__ == "__main__":
         "cpe": [
             {"product": "linux", "version": "5.4", "vendor": "linux_vendor"},
             {"product": "apache", "version": "2.4.6", "vendor": "apache_vendor"},
-            {"product": "linux", "version": "*", "vendor": "linux_vendor", "startVersion": "5.4", "endVersion": "5.4.8"},
-            {"product": "apache", "version": "*", "vendor": "linux_vendor", "endVersion": "2.4"}
+            {"product": "linux", "version": "*", "vendor": "linux_vendor",
+                "startVersion": "5.4", "endVersion": "5.4.8"},
+            {"product": "apache", "version": "*",
+                "vendor": "linux_vendor", "endVersion": "2.4"}
         ]
     }
 

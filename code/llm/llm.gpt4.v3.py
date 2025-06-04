@@ -4,7 +4,7 @@ import time
 from openai import OpenAI
 
 # Initialize OpenAI client
-client = OpenAI(api_key="a vossa API KEY")
+client = OpenAI(api_key="a vossa API    KEY")
 
 
 class DpkgLogParser:

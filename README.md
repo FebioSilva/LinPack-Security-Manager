@@ -1,6 +1,6 @@
 # 🧠 LinPack – A Way to Manage Vulnerable Linux Packages More Efficiently
 
-LinPack is a semantic-based system designed for identifying and monitoring vulnerabilities in Linux systems. By analyzing installed package logs (`dpkg.log`) and cross-referencing them with public vulnerability databases (such as the NVD), LinPack builds a **knowledge graph** that allows for intelligent and visual exploration of a system's security state.
+LinPack is a semantic-based system designed to identify and monitor vulnerabilities in Linux environments. It analyzes actions recorded by the Debian package manager (`dpkg.log`) and cross-references them with public vulnerability databases, such as the NVD. The result is a **knowledge graph** that enables intelligent, visual exploration of a system’s security posture.s
 
 > Final BSc Project at Instituto Superior de Engenharia de Lisboa (ISEL), 2025.  
 > Authors: Bruno Raposo, Fábio Silva  
@@ -22,9 +22,7 @@ LinPack collects data about installed packages and known security vulnerabilitie
 - **Faster identification of at-risk packages**;
 - **Improved monitoring** of evolving vulnerabilities.
 
-The system stores this structured information in a **non-relational database**, enabling advanced semantic queries and flexible data management.
-
----
+## System stores this structured information in a triple store, a type of **non-relational database**, enabling advanced semantic queries and flexible data management.
 
 ## 📸 System Architecture
 

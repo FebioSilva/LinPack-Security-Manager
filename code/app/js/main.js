@@ -28,11 +28,17 @@ async function main() {
       svg.selectAll("*").remove();
 
       if (view === "graph") {
+        statsView.style("display", "none").html("");
+        svg.style("display", "block");
         renderGraph(nodes, links);
       } else if (view === "bubble") {
+        statsView.style("display", "none").html("");
+        svg.style("display", "block");
         renderBubbleChart(processedData);
       }
-      else if (view === "topCVEs") {
+      else if (view === "stats") {
+        svg.style("display", "none");
+        statsView.style("display", "block");
         renderStatistics(processedTopCVEs);
       }
     });

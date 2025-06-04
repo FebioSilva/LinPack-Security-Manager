@@ -1,4 +1,5 @@
 function renderGraph(nodes, links) {
+  document.getElementById("stats-view").innerHTML = ""; // Clear stats
   const svg = d3.select("svg");
   const width = window.innerWidth;
   const height = window.innerHeight;

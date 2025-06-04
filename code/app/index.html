@@ -8,6 +8,7 @@
   <script src="./js/graph-render.js"></script>
   <script src="./js/process-data-from-sparql.js"></script>
   <script src="./js/bubble-chart-render.js"></script>
+  <script src="./js/statistics-render.js"></script>
   <script src="./js/main.js"></script>
   <style>
     body { margin: 0; font-family: sans-serif; }
@@ -33,10 +34,11 @@
   <select id="viewSelect">
     <option value="graph">Grafo</option>
     <option value="bubble">Bubble Chart</option>
+    <option value="topCVEs">Top 5 CVEs</option>
   </select>
-</div>
+  </div>
   <svg></svg>
-
+  <div id="stats-view"></div>
  
 </body>
 </html>

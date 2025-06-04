@@ -360,6 +360,20 @@ function processCountData(bindings) {
   }));
 }
 
+function processTopCVEsData(bindings) {
+  const cveList = []
+  bindings.forEach(cve => {
+    cveList.push({ 
+      id: cve.cve.value.split("#")[1],
+      score: Number(cve['base_score']['value']),
+      severity: cve['base_severity']['value'],
+      version: cve['cvss_version']['value']
+    })
+  })
+  return {
+    cves: cveList
+  }
+}
 
 function mergeGraphs(graph1, graph2) {
   const nodeMap = new Map();
@@ -399,9 +413,6 @@ function mergeGraphs(graph1, graph2) {
     })
   };
 }
-
-
-
 
 
 // Main function

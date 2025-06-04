@@ -1,10 +1,3 @@
-// Listeners
-d3.select("#viewSelect").on("change", function () {
-    const view = this.value;
-    const year = d3.select("#yearSelect").property("value");
-    updateControlsVisibility(view);
-    loadAndRenderView(view, year);
-  });
 
   d3.select("#yearSelect").on("change", function () {
     const year = this.value;

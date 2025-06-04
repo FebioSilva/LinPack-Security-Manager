@@ -1,17 +1,21 @@
+// Declara abortController UMA vez no topo do arquivo
+let abortController = null;
 
-  d3.select("#yearSelect").on("change", function () {
-    const year = this.value;
-    const view = d3.select("#viewSelect").property("value");
-    loadAndRenderView(view, year);
-  });
-// ---------------------------------------
-
+// Mostra ou esconde spinner
 function showSpinner(show) {
   const spinner = document.getElementById("loading-spinner");
   spinner.style.display = show ? "block" : "none";
 }
-let abortController = null;
 
+// Atualiza visibilidade dos controles, ex: filtro ano só em 'graph'
+function updateControlsVisibility(view) {
+  const yearFilter = document.getElementById("yearFilter");
+  if (yearFilter) {
+    yearFilter.style.display = (view === "graph") ? "flex" : "none";
+  }
+}
+
+// Função principal de carregar e renderizar a vista
 async function loadAndRenderView(view, year = "all") {
   if (abortController) {
     abortController.abort(); // cancela fetch anterior
@@ -26,11 +30,13 @@ async function loadAndRenderView(view, year = "all") {
   svg.selectAll("*").remove();
   statsView.html("");
 
-  // Controla visibilidade do stats-view
+  // Controla visibilidade do stats-view e svg conforme vista
   if (view === "topCVEs") {
     statsView.style("display", "block");
+    svg.style("display", "none");
   } else {
     statsView.style("display", "none");
+    svg.style("display", "block");
   }
 
   try {
@@ -64,22 +70,35 @@ async function loadAndRenderView(view, year = "all") {
   }
 }
 
-
-function updateControlsVisibility(view) {
-  const yearFilter = document.getElementById("yearFilter");
-  if (view === "graph") {
-    yearFilter.style.display = "flex";
-  } else {
-    yearFilter.style.display = "none";
-  }
-}
-
 async function main() {
+  // Espera o DOM estar carregado
+  document.addEventListener("DOMContentLoaded", () => {
+    const viewSelect = document.getElementById("viewSelect");
+    const yearSelect = document.getElementById("yearSelect");
 
-  // Inicializa controles e carregamento
-  const initialView = d3.select("#viewSelect").property("value");
-  updateControlsVisibility(initialView);
-  await loadAndRenderView(initialView, "all");
+    if (!viewSelect || !yearSelect) {
+      console.error("Elementos #viewSelect e/ou #yearSelect não encontrados no DOM");
+      return;
+    }
+
+    // Listeners
+    viewSelect.addEventListener("change", () => {
+      const view = viewSelect.value;
+      const year = yearSelect.value;
+      updateControlsVisibility(view);
+      loadAndRenderView(view, year);
+    });
+
+    yearSelect.addEventListener("change", () => {
+      const year = yearSelect.value;
+      const view = viewSelect.value;
+      loadAndRenderView(view, year);
+    });
+
+    // Inicialização
+    updateControlsVisibility(viewSelect.value);
+    loadAndRenderView(viewSelect.value, "all");
+  });
 }
 
 main();

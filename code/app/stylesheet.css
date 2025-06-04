@@ -1,0 +1,77 @@
+body {
+  margin: 0; 
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+#controls {
+  background: #eee;
+  padding: 8px;
+  border-radius: 6px;
+  z-index: 10;
+  /* mantém fixo no topo */
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  user-select: none;
+}
+
+/* opcional, deixa o yearFilter alinhado e só visível na view graph */
+#yearFilter {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+
+svg {
+  flex: 1; /* ocupa o restante espaço vertical */
+  width: 100%;
+  height: calc(100vh - 50px); /* altura total menos a barra de controls */
+  margin-top: 50px; /* para garantir que o svg não fica atrás da barra fixa */
+  display: block;
+}
+
+.node circle { stroke: #fff; stroke-width: 1.5px; }
+    .node text { pointer-events: none; font-size: 12px; }
+    line { stroke: #999; stroke-opacity: 0.6; }
+
+#loading-spinner {
+  display: none; /* começa escondido */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: #333;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  text-align: center;
+  user-select: none;
+}
+
+/* Spinner animado simples */
+#loading-spinner::before {
+  content: "";
+  display: block;
+  margin: 0 auto 10px auto;
+  width: 24px;
+  height: 24px;
+  border: 4px solid #ccc;
+  border-top-color: #333;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+

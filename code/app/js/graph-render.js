@@ -1,5 +1,5 @@
 function renderGraph(nodes, links) {
-  document.getElementById("stats-view").innerHTML = ""; // Clear stats
+  document.getElementById("stats-view").innerHTML = "";
   const svg = d3.select("svg");
   const width = window.innerWidth;
   const height = window.innerHeight;
@@ -11,8 +11,8 @@ function renderGraph(nodes, links) {
     graphGroup.attr("transform", event.transform);
   });
   svg.call(zoom);
-
-  const nodesMap = new Map(nodes.map(n => [n.id, { ...n, collapsed: true, children: [] }]));
+  svg.call(zoom.transform, d3.zoomIdentity);
+  const nodesMap = new Map(nodes.map(n => [n.id, { ...n, children: [], collapsed: true }]));
 
   links.forEach(link => {
     const source = nodesMap.get(link.source);
@@ -28,23 +28,23 @@ function renderGraph(nodes, links) {
 
   const topNodes = Array.from(nodesMap.values()).filter(n => n.type === "Product");
 
+  // Inicializa posições aleatórias para todos os nodes para evitar concentração
+  nodesMap.forEach(node => {
+    node.x = Math.random() * width * 0.8 + width * 0.1;
+    node.y = Math.random() * height * 0.8 + height * 0.1;
+  });
+
   let visibleNodes = topNodes.slice();
   let visibleLinks = [];
 
   const simulation = d3.forceSimulation()
-    .force("link", d3.forceLink().id(d => d.id).distance(80))
-    .force("charge", d3.forceManyBody().strength(-400))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("y", d3.forceY().y(d => {
-      switch (d.type) {
-        case "Product": return height / 4;
-        case "Version": return height / 2;
-        case "CVE": return (height / 4) * 3;
-        default: return height / 2;
-      }
-    }))
-    .force("collide", d3.forceCollide().radius(30))
-    .alphaDecay(0.07)
+    .force("link", d3.forceLink().id(d => d.id).distance(120))
+    .force("charge", d3.forceManyBody().strength(-200))
+    .force("center", d3.forceCenter(width / 2, height / 2).strength(0.05))
+    .force("collide", d3.forceCollide().radius(40))
+    .force("x", d3.forceX(width / 2).strength(0.02))
+    .force("y", d3.forceY(height / 2).strength(0.02))
+    .alphaDecay(0.05)
     .on("tick", ticked);
 
   let nodesMerged, linksMerged;
@@ -80,13 +80,13 @@ function renderGraph(nodes, links) {
           d.collapsed = !d.collapsed;
 
           d3.select(event.currentTarget).select("circle")
-            .transition()
-            .duration(300)
-            .attr("r", d.collapsed ? 12 : 16);
+            .transition().duration(300)
+            .attr("r", d.collapsed ? 12 : 18);
 
           if (!d.collapsed) {
+            // Posiciona filhos em círculo ao redor do pai
             const angleStep = (2 * Math.PI) / d.children.length;
-            const radius = 150 + d.children.length * 30;
+            const radius = 50 + d.children.length * 10;
             d.children.forEach((child, i) => {
               const angle = i * angleStep;
               child.x = d.x + radius * Math.cos(angle);
@@ -95,6 +95,7 @@ function renderGraph(nodes, links) {
           }
 
           update();
+          simulation.alpha(0.3).restart();
         }
       })
       .call(d3.drag()
@@ -150,28 +151,55 @@ function renderGraph(nodes, links) {
 
     simulation.nodes(visibleNodes);
     simulation.force("link").links(visibleLinks);
-    simulation.alpha(0.6).restart();
+    simulation.alpha(0.3).restart();
 
-    // Garantir que os nós fiquem por cima dos links
     graphGroup.selectAll(".node").raise();
 
     const tooltip = d3.select("#tooltip");
 
     nodesMerged
-      .on("mouseover", (event, d) => {
-        let html = `<strong>${d.id}</strong><br><em>Type:</em> ${d.type}`;
-        tooltip.html(html)
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY + 10) + "px")
-          .style("display", "block");
-      })
-      .on("mousemove", event => {
-        tooltip.style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY + 10) + "px");
-      })
-      .on("mouseout", () => {
-        tooltip.style("display", "none");
-      });
+  .on("mouseover", (event, d) => {
+    let html = `<strong>${d.id}</strong><br><em>Type:</em> ${d.type}<br>`;
+
+    if (d.type === "CVE") {
+      html += `
+        <strong>Description:</strong> ${d.description || 'N/A'}<br>
+        <strong>Base Score:</strong> ${d.base_score || 'N/A'}<br>
+        <strong>Base Severity:</strong> ${d.base_severity || 'N/A'}<br>
+        <strong>CVSS Version:</strong> ${d.cvss_version || 'N/A'}<br>
+        <strong>CVSS Code:</strong> ${d.cvss_code || 'N/A'}<br>
+      `;
+    } else if (d.type === "Product") {
+      html += `
+        <strong>Product Name:</strong> ${d.name || 'N/A'}<br>
+        <strong>Vendor:</strong> ${d.vendor || 'N/A'}<br>
+      `;
+    } else if (d.type === "Version") {
+      html += `
+        <strong>Version Major:</strong> ${d.major || 'N/A'}<br>
+        <strong>Version Minor:</strong> ${d.minor || 'N/A'}<br>
+        <strong>Version Patch:</strong> ${d.patch || 'N/A'}<br>
+      `;
+    } else if (d.type === "Vendor") {
+      html += `
+        <strong>Vendor Name:</strong> ${d.vendor_name || 'N/A'}<br>
+      `;
+    }
+    // Outros tipos podem ser adicionados aqui se precisar
+
+    tooltip.html(html)
+      .style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY + 10) + "px")
+      .style("display", "block");
+  })
+  .on("mousemove", event => {
+    tooltip.style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY + 10) + "px");
+  })
+  .on("mouseout", () => {
+    tooltip.style("display", "none");
+  });
+
   }
 
   function ticked() {
@@ -184,5 +212,5 @@ function renderGraph(nodes, links) {
     nodesMerged.attr("transform", d => `translate(${d.x},${d.y})`);
   }
 
-  update(); // Inicial
+  update();
 }

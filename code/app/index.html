@@ -9,14 +9,7 @@
   <script src="./js/process-data-from-sparql.js"></script>
   <script src="./js/bubble-chart-render.js"></script>
   <script src="./js/statistics-render.js"></script>
-  <script src="./js/main.js"></script>
-  <style>
-    body { margin: 0; font-family: sans-serif; }
-    svg { width: 100vw; height: 100vh; }
-    .node circle { stroke: #fff; stroke-width: 1.5px; }
-    .node text { pointer-events: none; font-size: 12px; }
-    line { stroke: #999; stroke-opacity: 0.6; }
-  </style>
+  <link rel="stylesheet" href="./stylesheet.css" />
 </head>
 <body>
   <div id="tooltip" style="
@@ -29,16 +22,36 @@
     font-size: 12px;
     display: none;
   "></div>
-  <div style="position: fixed; top: 10px; left: 10px; background: #eee; padding: 8px; border-radius: 6px; z-index: 10;">
-  <label for="viewSelect">Visualização: </label>
-  <select id="viewSelect">
-    <option value="graph">Grafo</option>
-    <option value="bubble">Bubble Chart</option>
-    <option value="topCVEs">Top 5 CVEs</option>
-  </select>
+
+  <div id="controls" style="position: fixed; top: 10px; left: 10px; background: #eee; padding: 8px; border-radius: 6px; z-index: 10; display: flex; gap: 10px; align-items: center;">
+    <label for="viewSelect">Visualização: </label>
+    <select id="viewSelect">
+      <option value="graph">Grafo</option>
+      <option value="bubble">Bubble Chart</option>
+      <option value="topCVEs">Top 5 CVEs</option>
+    </select>
+
+    <div id="yearFilter" style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
+      <label for="yearSelect">Ano: </label>
+      <select id="yearSelect">
+        <option value="all" selected>Todos</option>
+        <option value="2020">2020</option>
+        <option value="2021">2021</option>
+        <option value="2022">2022</option>
+        <option value="2023">2023</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
   </div>
+
+  <div id="loading-spinner">
+    Loading data, please wait...
+  </div>
+
   <svg></svg>
   <div id="stats-view"></div>
- 
+
+  <script src="./js/main.js"></script>
 </body>
 </html>

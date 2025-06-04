@@ -72,7 +72,7 @@ WHERE {
            cve:has_vendor ?vendor ;
            cve:has_first_version ?first_version ;
            cve:has_last_version ?last_version ;
-           cve:has_cve ?cve .  # <=== Restriction: product has this CVE
+           cve:has_cve ?cve .
 
   # Vendor info
   ?vendor a cve:Vendor ;
@@ -83,14 +83,17 @@ WHERE {
                  cve:version_major ?first_version_major ;
                  cve:version_minor ?first_version_minor ;
                  cve:version_patch ?first_version_patch ;
-                 cve:has_cve_affecting_product ?cve .  # <=== Restriction: version tied to this CVE
+                 cve:has_cve_affecting_product ?cve .
 
   # Last version details
   ?last_version a cve:Version ;
                 cve:version_major ?last_version_major ;
                 cve:version_minor ?last_version_minor ;
                 cve:version_patch ?last_version_patch ;
-                cve:has_cve_affecting_product ?cve .  # <=== Restriction: version tied to this CVE
+                cve:has_cve_affecting_product ?cve .
+
+  FILTER (?first_version != cve:version_none)
+  FILTER (?last_version != cve:version_none)
 }`
 
 const highestSeverityCVEsQuery = `
@@ -124,6 +127,59 @@ GROUP BY ?product ?productName
 ORDER BY DESC(?numCVEs)
 `
 
+function generateCVEQueryByYear(year) {
+  if (year === "all") {
+    return queryCVE; // Return the full query if "all" is selected
+  }
+  return `
+    PREFIX cve: <http://purl.org/cyber/cve#>
+    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+    SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
+           ?product ?product_name
+           ?vendor ?vendor_name
+           ?first_version ?last_version
+           ?first_version_major ?first_version_minor ?first_version_patch
+           ?last_version_major ?last_version_minor ?last_version_patch
+    FROM <http://localhost:8890/linpack>
+    WHERE {
+      ?cve a cve:CVE ;
+           cve:description ?description ;
+           cve:base_score ?base_score ;
+           cve:base_severity ?base_severity ;
+           cve:cvss_version ?cvss_version ;
+           cve:cvss_code ?cvss_code ;
+           cve:has_affected_product ?product .
+
+      ?product a cve:Product ;
+               cve:product_name ?product_name ;
+               cve:has_vendor ?vendor ;
+               cve:has_first_version ?first_version ;
+               cve:has_last_version ?last_version ;
+               cve:has_cve ?cve .
+
+      ?vendor a cve:Vendor ;
+              cve:vendor_name ?vendor_name .
+
+      ?first_version a cve:Version ;
+                     cve:version_major ?first_version_major ;
+                     cve:version_minor ?first_version_minor ;
+                     cve:version_patch ?first_version_patch ;
+                     cve:has_cve_affecting_product ?cve .
+
+      ?last_version a cve:Version ;
+                    cve:version_major ?last_version_major ;
+                    cve:version_minor ?last_version_minor ;
+                    cve:version_patch ?last_version_patch ;
+                    cve:has_cve_affecting_product ?cve .
+
+      FILTER regex(str(?cve), "CVE-${year}", "i")
+      FILTER (?first_version != cve:version_none)
+      FILTER (?last_version != cve:version_none)
+    }
+  `;
+}
+
 
 /**
   * Fetch data from SPARQL endpoint
@@ -131,13 +187,14 @@ ORDER BY DESC(?numCVEs)
   * @returns {Promise<Array>} - A promise that resolves to the results of the query
  */
 
-async function fetchDataFromSPARQLEndPoint(query) {
+async function fetchDataFromSPARQLEndPoint(query, signal) {
   const endpoint = 'http://localhost:3001/sparql?query=' + encodeURIComponent(query);
   const response = await fetch(endpoint, {
     method: 'GET',
     headers: {
       'Accept': 'application/sparql-results+json'
-    }
+    },
+    signal  // passa o signal aqui (undefined se não for passado)
   });
 
   if (!response.ok) {
@@ -148,6 +205,7 @@ async function fetchDataFromSPARQLEndPoint(query) {
   const data = await response.json();
   return data.results.bindings;
 }
+
 
 
 
@@ -327,7 +385,6 @@ function processCVEDataToGraph(bindings) {
               minor,
               patch
             });
-
             // Marca que essa versão pertence ao produto
             productVersionsMap.get(productId).set(versionId, true);
 
@@ -339,9 +396,8 @@ function processCVEDataToGraph(bindings) {
           links.push({ source: versionId, target: cveId, type: "has_cve_affecting_product" });
         }
       });
-
-      // Opcional: link direto produto -> CVE (pode ajudar, mas pode causar clutter)
-      // links.push({ source: productId, target: cveId, type: "affects_product" });
+      // Link produto -> CVE
+      links.push({ source: productId, target: cveId, type: "affects_product" });
     }
   });
 
@@ -377,7 +433,7 @@ function processTopCVEsData(bindings) {
 
 function mergeGraphs(graph1, graph2) {
   const nodeMap = new Map();
-  const linkSet = new Set();
+  const linkMap = new Map(); // chave para links com tipo incluído
 
   // Adiciona todos os nós do primeiro grafo
   for (const node of graph1.nodes) {
@@ -391,28 +447,26 @@ function mergeGraphs(graph1, graph2) {
     }
   }
 
-  // Links do primeiro grafo
+  // Adiciona links do primeiro grafo (com tipo)
   for (const link of graph1.links) {
-    const key = `${link.source}->${link.target}`;
-    linkSet.add(key);
+    const key = `${link.source}->${link.target}->${link.type}`;
+    linkMap.set(key, { ...link });
   }
 
-  // Links do segundo grafo, evitando duplicatas
+  // Adiciona links do segundo grafo, evitando duplicatas (com tipo)
   for (const link of graph2.links) {
-    const key = `${link.source}->${link.target}`;
-    if (!linkSet.has(key)) {
-      linkSet.add(key);
+    const key = `${link.source}->${link.target}->${link.type}`;
+    if (!linkMap.has(key)) {
+      linkMap.set(key, { ...link });
     }
   }
 
   return {
     nodes: Array.from(nodeMap.values()),
-    links: Array.from(linkSet).map(key => {
-      const [source, target] = key.split("->");
-      return { source, target };
-    })
+    links: Array.from(linkMap.values())
   };
 }
+
 
 
 // Main function

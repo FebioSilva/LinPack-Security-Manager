@@ -31,7 +31,7 @@ async function loadAndRenderView(view, year = "all") {
   statsView.html("");
 
   // Controla visibilidade do stats-view e svg conforme vista
-  if (view === "topCVEs") {
+  if (view === "stats") {
     statsView.style("display", "block");
     svg.style("display", "none");
   } else {
@@ -54,10 +54,12 @@ async function loadAndRenderView(view, year = "all") {
       const rawData = await fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery, signal);
       const processedData = processCountData(rawData);
       renderBubbleChart(processedData);
-    } else if (view === "topCVEs") {
+    } else if (view === "stats") {
       const rawTopCVEs = await fetchDataFromSPARQLEndPoint(highestSeverityCVEsQuery, signal);
       const processedTopCVEs = processTopCVEsData(rawTopCVEs);
-      renderStatistics(processedTopCVEs);
+      const rawData = await fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery, signal);
+      const processedData = processCountData(rawData);
+      renderStatistics(processedTopCVEs, processedData);
     }
   } catch (err) {
     if (err.name === "AbortError") {

@@ -11,66 +11,19 @@
   <script src="./js/statistics-render.js"></script>
   <link rel="stylesheet" href="./stylesheet.css" />
   <style>
-    body { margin: 0; font-family: sans-serif; }
+    body { margin: 0; font-family: sans-serif}
     svg { width: 100vw; height: 100vh; }
     .node circle { stroke: #fff; stroke-width: 1.5px; }
     .node text { pointer-events: none; font-size: 12px; }
     line { stroke: #999; stroke-opacity: 0.6; }
-  </style>
-  <style>
-  #stats-view {
-    padding: 20px;
-    margin: 60px auto 0 auto; /* Top margin creates space from the top */
-    width: 100vw;
-    min-height: calc(100vh - 60px); /* Ensure it stretches to the full height minus top margin */
-    background-color: #f9f9f9;
-    color: #333;
-    font-family: sans-serif;
-    box-sizing: border-box;
-  }
-
-  #stats-view #top-cves {
-    width: fit-content;
-    height: fit-content;
-    border: 1px solid black;      /* clean black border */
-    padding: 20px;
-    border-radius: 8px;
-    background-color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* subtle depth */
-  }
-
-  #stats-view ul {
-    list-style-type: none;
-    padding: 0;
-  }
-
-  #stats-view li {
-    background: #fff;
-    border: 1px solid #ddd;
-    padding: 12px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  #stats-view .cve-id {
-    font-weight: bold;
-    font-size: 1.1em;
-  }
-
-  #stats-view .cve-score {
-    color: #b00;
-  }
-
-  #stats-view .cve-severity {
-    color: rgb(0, 0, 0);
-  }
-
-  #stats-view .cvss-version {
-    margin-top: 4px;
-    font-size: 0.9em;
-    color: #666;
-  }
+    #stats-view { 
+      padding: 20px;
+      width: 100vw; 
+      min-height: calc(100vh - 60px);
+      color: #333;
+      font-family: sans-serif;
+      box-sizing: border-box
+    }  
   </style>
 </head>
 <body>
@@ -85,17 +38,17 @@
     display: none;
   "></div>
   <div id="controls" style="position: fixed; top: 10px; left: 10px; background: #eee; padding: 8px; border-radius: 6px; z-index: 10; display: flex; gap: 10px; align-items: center;">
-    <label for="viewSelect">Visualização: </label>
+    <label for="viewSelect">View: </label>
     <select id="viewSelect">
-      <option value="graph">Grafo</option>
+      <option value="graph">Graph</option>
       <option value="bubble">Bubble Chart</option>
-      <option value="topCVEs">Top 5 CVEs</option>
+      <option value="stats">Statistics</option>
     </select>
 
     <div id="yearFilter" style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
-      <label for="yearSelect">Ano: </label>
+      <label for="yearSelect">Year: </label>
       <select id="yearSelect">
-        <option value="all" selected>Todos</option>
+        <option value="all" selected>All</option>
         <option value="2020">2020</option>
         <option value="2021">2021</option>
         <option value="2022">2022</option>

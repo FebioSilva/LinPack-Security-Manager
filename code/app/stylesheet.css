@@ -28,7 +28,6 @@ body {
   align-items: center;
 }
 
-
 svg {
   flex: 1; /* ocupa o restante espaço vertical */
   width: 100%;

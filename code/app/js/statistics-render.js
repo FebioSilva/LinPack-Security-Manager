@@ -61,6 +61,8 @@ function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
   bubbleChart.setAttribute("height", bubbleChartHeight);
   countDiv.appendChild(bubbleChart)
 
+  container.appendChild(countDiv)
+
   const svg = d3.select("#bubble-chart-svg")
   
   const maxRadius = 140;
@@ -126,6 +128,4 @@ function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
     });
 
   svg.call(zoom);
-
-  container.appendChild(countDiv)
 }  

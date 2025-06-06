@@ -128,9 +128,8 @@ INSERT DATA {{
             if version != "none":
                 version_parts = version.split(".")
                 major_part = int(version_parts[0])
-                minor_part = int(version_parts[1])
-                patch_part = int(version_parts[2]) if len(
-                    version_parts) == 3 else 0
+                minor_part = int(version_parts[1]) if len(version_parts) == 2 else 0
+                patch_part = int(version_parts[2]) if len(version_parts) == 3 else 0
                 version_lines.append(f"""    {blank} a cve:Version ;
                     cve:version_major {major_part} ;
                     cve:version_minor {minor_part} ;

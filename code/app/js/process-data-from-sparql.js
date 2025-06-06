@@ -92,8 +92,6 @@ WHERE {
                 cve:version_patch ?last_version_patch ;
                 cve:has_cve_affecting_product ?cve .
 
-  FILTER (?first_version != cve:version_none)
-  FILTER (?last_version != cve:version_none)
 }`
 
 const highestSeverityCVEsQuery = `

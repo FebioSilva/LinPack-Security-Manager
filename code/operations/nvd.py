@@ -14,9 +14,18 @@ if __name__ == "__main__":
     for cve in cves:
         print(cve)
         print("*****************************************")
-        cve_in_sparql = nvdToRDF.cve_object_to_sparql(cve)
-        # print(cve_in_sparql)
-        #dbOperations.insert_into_graph(cve_in_sparql)
-        # print("-----------------------------------------------")
+
+        # Usa a função otimizada com múltiplos blocos
+        sparql_blocks = nvdToRDF.cve_object_to_sparql(cve)
+
+        # Exporta o CVE específico se for o que procuras
+        if cve["id"] == "CVE-2019-14615":
+            with open("cve-2019-14615.sparql", "w", encoding="utf-8") as writer:
+                writer.write("\n\n".join(sparql_blocks))
+
+        # Insere cada bloco no endpoint Virtuoso
+        for sparql_block in sparql_blocks:
+            dbOperations.insert_into_graph(sparql_block)
+
     print("******************************************")
     print("CVE objects inserted into the graph database.")

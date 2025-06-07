@@ -16,37 +16,14 @@
 #    Object Properties
 #################################################################
 
-###  http://purl.org/cyber/cve#has_cve_affecting_product
-<http://purl.org/cyber/cve#has_cve_affecting_product> rdfs:domain :Versions ;
-                                                      rdfs:comment "Indicates which cve affects the range of versions of a certain product" .
-
-
 ###  http://purl.org/cyber/cve#has_owned_product
 <http://purl.org/cyber/cve#has_owned_product> rdfs:subPropertyOf owl:topObjectProperty .
 
 
-###  http://www.semanticweb.org/linpack#has_product
+###  http://www.semanticweb.org/linpack/has_product
 :has_product rdf:type owl:ObjectProperty ;
              rdfs:subPropertyOf owl:topObjectProperty ;
-             owl:inverseOf :has_version_interval ;
-             rdfs:domain :Versions ;
              rdfs:range <http://purl.org/cyber/cve#Product> .
-
-
-###  http://www.semanticweb.org/linpack#has_version_interval
-:has_version_interval rdf:type owl:ObjectProperty ;
-                      rdfs:subPropertyOf owl:topObjectProperty ;
-                      rdfs:domain <http://purl.org/cyber/cve#Product> ;
-                      rdfs:range :Versions ;
-                      rdfs:comment "Indicates all the version intervals of a certain product" .
-
-
-###  http://www.semanticweb.org/linpack#replaced_by
-:replaced_by rdf:type owl:ObjectProperty ;
-             rdfs:subPropertyOf owl:topObjectProperty ;
-             rdfs:domain <http://www.semanticweb.org/logs-ontology-v2/Package> ;
-             rdfs:range <http://www.semanticweb.org/logs-ontology-v2/Package> ;
-             rdfs:comment "Indicates which package replaced the domain package" .
 
 
 #################################################################
@@ -65,74 +42,11 @@
 <http://purl.org/cyber/cve#url> rdfs:range xsd:string .
 
 
-###  http://www.semanticweb.org/linpack#installed
-:installed rdf:type owl:DatatypeProperty ;
-           rdfs:subPropertyOf owl:topDataProperty ;
-           rdfs:domain <http://www.semanticweb.org/logs-ontology-v2/Package> ;
-           rdfs:range xsd:boolean ;
-           rdfs:comment "Indicates if a package is installed in the system" .
-
-
-###  http://www.semanticweb.org/linpack#max
-:max rdf:type owl:DatatypeProperty ;
-     rdfs:subPropertyOf owl:topDataProperty ;
-     rdfs:domain :Versions ;
-     rdfs:range xsd:string ;
-     rdfs:comment "Represents the maximum version in a version interval" .
-
-
-###  http://www.semanticweb.org/linpack#min
-:min rdf:type owl:DatatypeProperty ;
-     rdfs:subPropertyOf owl:topDataProperty ;
-     rdfs:domain :Versions ;
-     rdfs:range xsd:string ;
-     rdfs:comment "Represents the minimum version of a version interval" .
-
-
 #################################################################
-#    Classes
+#    Annotations
 #################################################################
 
-###  http://purl.org/cyber/cve#Product
-<http://purl.org/cyber/cve#Product> rdfs:subClassOf [ rdf:type owl:Restriction ;
-                                                      owl:onProperty <http://purl.org/cyber/cve#has_cve> ;
-                                                      owl:someValuesFrom <http://purl.org/cyber/cve#CVE>
-                                                    ] ,
-                                                    [ rdf:type owl:Restriction ;
-                                                      owl:onProperty :has_version_interval ;
-                                                      owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                                                      owl:onClass :Versions
-                                                    ] .
-
-
-###  http://www.semanticweb.org/linpack#Versions
-:Versions rdf:type owl:Class ;
-          rdfs:subClassOf <http://purl.org/cyber/cve#CVEThing> ,
-                          [ rdf:type owl:Restriction ;
-                            owl:onProperty :max ;
-                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                            owl:onDataRange xsd:string
-                          ] ,
-                          [ rdf:type owl:Restriction ;
-                            owl:onProperty :min ;
-                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                            owl:onDataRange xsd:string
-                          ] ;
-          rdfs:comment "A range of versions of an affected product" ;
-          rdfs:label "Versions" .
-
-
-###  http://www.semanticweb.org/logs-ontology-v2/Package
-<http://www.semanticweb.org/logs-ontology-v2/Package> rdfs:subClassOf [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :replaced_by ;
-                                                                        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                                                                        owl:onClass <http://www.semanticweb.org/logs-ontology-v2/Package>
-                                                                      ] ,
-                                                                      [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :installed ;
-                                                                        owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                                                                        owl:onDataRange xsd:boolean
-                                                                      ] .
+<http://purl.org/cyber/cve#has_cve_affecting_product> rdfs:comment "Indicates which cve affects the range of versions of a certain product" .
 
 
 ###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

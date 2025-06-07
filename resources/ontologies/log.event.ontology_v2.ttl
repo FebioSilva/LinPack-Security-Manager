@@ -14,6 +14,13 @@
 #    Object Properties
 #################################################################
 
+###  http://www.semanticweb.org/logs-ontology-v2#replaced_by
+:replaced_by rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             rdfs:domain :Package ;
+             rdfs:range :Package .
+
+
 ###  http://www.semanticweb.org/logs-ontology-v2/has_package
 :has_package rdf:type owl:ObjectProperty ;
              rdfs:subPropertyOf owl:topObjectProperty ;
@@ -26,6 +33,13 @@
 #################################################################
 #    Data properties
 #################################################################
+
+###  http://www.semanticweb.org/logs-ontology-v2#installed
+:installed rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain :Package ;
+           rdfs:range xsd:boolean .
+
 
 ###  http://www.semanticweb.org/logs-ontology-v2/action
 :action rdf:type owl:DatatypeProperty ;
@@ -169,6 +183,16 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/Package
 :Package rdf:type owl:Class ;
          rdfs:subClassOf [ rdf:type owl:Restriction ;
+                           owl:onProperty :replaced_by ;
+                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onClass :Package
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :installed ;
+                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:boolean
+                         ] ,
+                         [ rdf:type owl:Restriction ;
                            owl:onProperty :package_architecture ;
                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onDataRange xsd:string

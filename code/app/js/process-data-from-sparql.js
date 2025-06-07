@@ -49,15 +49,12 @@ ORDER BY ?timestamp`
 const queryCVE=`PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
-       ?product ?product_name
-       ?vendor ?vendor_name
-       ?first_version ?last_version
-       ?first_version_major ?first_version_minor ?first_version_patch
-       ?last_version_major ?last_version_minor ?last_version_patch
-FROM <http://localhost:8890/linpack>
+SELECT DISTINCT
+  ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
+  ?product ?product_name
+  ?vendor ?vendor_name
+  ?version_min ?version_max
 WHERE {
-  # CVE entity
   ?cve a cve:CVE ;
        cve:description ?description ;
        cve:base_score ?base_score ;
@@ -66,32 +63,17 @@ WHERE {
        cve:cvss_code ?cvss_code ;
        cve:has_affected_product ?product .
 
-  # Product info
   ?product a cve:Product ;
            cve:product_name ?product_name ;
            cve:has_vendor ?vendor ;
-           cve:has_first_version ?first_version ;
-           cve:has_last_version ?last_version ;
-           cve:has_cve ?cve .
+           cve:has_version_interval ?version_interval .
 
-  # Vendor info
   ?vendor a cve:Vendor ;
           cve:vendor_name ?vendor_name .
 
-  # First version details
-  ?first_version a cve:Version ;
-                 cve:version_major ?first_version_major ;
-                 cve:version_minor ?first_version_minor ;
-                 cve:version_patch ?first_version_patch ;
-                 cve:has_cve_affecting_product ?cve .
-
-  # Last version details
-  ?last_version a cve:Version ;
-                cve:version_major ?last_version_major ;
-                cve:version_minor ?last_version_minor ;
-                cve:version_patch ?last_version_patch ;
-                cve:has_cve_affecting_product ?cve .
-
+  ?version_interval a cve:Versions ;
+                    cve:min ?version_min ;
+                    cve:max ?version_max .
 }`
 
 const highestSeverityCVEsQuery = `
@@ -99,7 +81,6 @@ PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
-FROM <http://localhost:8890/linpack>
 WHERE {
   ?cve a cve:CVE ;
        cve:description ?description ;
@@ -127,18 +108,15 @@ ORDER BY DESC(?numCVEs)
 
 function generateCVEQueryByYear(year) {
   if (year === "all") {
-    return queryCVE; // Return the full query if "all" is selected
+    return queryCVE;
   }
   return `
     PREFIX cve: <http://purl.org/cyber/cve#>
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-    SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
+    SELECT ?cve ?pub_date ?description ?base_score ?base_severity ?cvss_version ?cvss_code
            ?product ?product_name
            ?vendor ?vendor_name
-           ?first_version ?last_version
-           ?first_version_major ?first_version_minor ?first_version_patch
-           ?last_version_major ?last_version_minor ?last_version_patch
     FROM <http://localhost:8890/linpack>
     WHERE {
       ?cve a cve:CVE ;
@@ -147,36 +125,22 @@ function generateCVEQueryByYear(year) {
            cve:base_severity ?base_severity ;
            cve:cvss_version ?cvss_version ;
            cve:cvss_code ?cvss_code ;
+           cve:pub_date ?pub_date ;
            cve:has_affected_product ?product .
 
       ?product a cve:Product ;
                cve:product_name ?product_name ;
                cve:has_vendor ?vendor ;
-               cve:has_first_version ?first_version ;
-               cve:has_last_version ?last_version ;
                cve:has_cve ?cve .
 
       ?vendor a cve:Vendor ;
               cve:vendor_name ?vendor_name .
 
-      ?first_version a cve:Version ;
-                     cve:version_major ?first_version_major ;
-                     cve:version_minor ?first_version_minor ;
-                     cve:version_patch ?first_version_patch ;
-                     cve:has_cve_affecting_product ?cve .
-
-      ?last_version a cve:Version ;
-                    cve:version_major ?last_version_major ;
-                    cve:version_minor ?last_version_minor ;
-                    cve:version_patch ?last_version_patch ;
-                    cve:has_cve_affecting_product ?cve .
-
-      FILTER regex(str(?cve), "CVE-${year}", "i")
-      FILTER (?first_version != cve:version_none)
-      FILTER (?last_version != cve:version_none)
+      FILTER (STRSTARTS(STR(?pub_date), "${year}"))
     }
   `;
 }
+
 
 
 /**
@@ -313,15 +277,13 @@ function processLogDataToGraph(bindings) {
 function processCVEDataToGraph(bindings) {
   const nodesMap = new Map();
   const links = [];
-
-  // Map para relacionar produto -> versões (para evitar duplicação)
   const productVersionsMap = new Map();
 
   bindings.forEach(entry => {
     const cveUri = entry.cve.value;
     const cveId = extractLocalName(cveUri);
 
-    // Nodo CVE
+    // Nó CVE
     if (!nodesMap.has(cveId)) {
       nodesMap.set(cveId, {
         id: cveId,
@@ -331,13 +293,13 @@ function processCVEDataToGraph(bindings) {
         base_score: entry.base_score?.value,
         base_severity: entry.base_severity?.value,
         cvss_version: entry.cvss_version?.value,
-        cvss_code: entry.cvss_code?.value
+        cvss_code: entry.cvss_code?.value,
       });
     }
 
     const cveNode = nodesMap.get(cveId);
 
-    // Produto afetado
+    // Produto
     const productName = entry.product_name?.value;
     const vendorName = entry.vendor_name?.value;
     const productId = `prod_${productName}`;
@@ -347,63 +309,48 @@ function processCVEDataToGraph(bindings) {
         id: productId,
         type: "Product",
         name: productName,
-        vendor: vendorName
+        vendor: vendorName,
       });
-      productVersionsMap.set(productId, new Map()); // Inicializa mapa de versões para o produto
+      productVersionsMap.set(productId, new Map());
     }
 
-    // Versões (normalmente first e last versões, que indicam intervalo)
+    // Versões (min e max)
     const versionData = [
-      {
-        versionUri: entry.first_version?.value,
-        major: entry.first_version_major?.value,
-        minor: entry.first_version_minor?.value,
-        patch: entry.first_version_patch?.value,
-      },
-      {
-        versionUri: entry.last_version?.value,
-        major: entry.last_version_major?.value,
-        minor: entry.last_version_minor?.value,
-        patch: entry.last_version_patch?.value,
-      }
+      { versionUri: entry.version_min?.value },
+      { versionUri: entry.version_max?.value }
     ];
 
     if (productName) {
-      // Para cada versão do CVE, criamos nó de versão (se não existir)
-      versionData.forEach(({ versionUri, major, minor, patch }) => {
+      versionData.forEach(({ versionUri }) => {
         if (versionUri) {
-          const versionId = extractLocalName(versionUri);
+          const versionId = `version_${extractLocalName(versionUri)}`;
 
-          // Verifica se versão já foi adicionada para esse produto
           if (!productVersionsMap.get(productId).has(versionId)) {
             nodesMap.set(versionId, {
               id: versionId,
               type: "Version",
-              major,
-              minor,
-              patch
+              uri: versionUri,
+              // Se tiver mais info de versão, pode ser incluída aqui
             });
-            // Marca que essa versão pertence ao produto
             productVersionsMap.get(productId).set(versionId, true);
 
-            // Link produto -> versão
             links.push({ source: productId, target: versionId, type: "has_version" });
           }
 
-          // Link versão -> CVE
           links.push({ source: versionId, target: cveId, type: "has_cve_affecting_product" });
         }
       });
-      // Link produto -> CVE
+
       links.push({ source: productId, target: cveId, type: "affects_product" });
     }
   });
 
   return {
     nodes: Array.from(nodesMap.values()),
-    links: links
+    links
   };
 }
+
 
 
 // Extract needed data for bubbles: productName and count

@@ -62,11 +62,16 @@ function renderGraph(nodes, links) {
 
     topNodes.forEach(collectVisible);
 
-    visibleLinks = links.filter(
-      l =>
-        visibleNodes.some(n => n.id === (typeof l.source === "object" ? l.source.id : l.source)) &&
-        visibleNodes.some(n => n.id === (typeof l.target === "object" ? l.target.id : l.target))
-    );
+    // Corrigido: só adiciona links entre nodes visíveis pai -> filho
+    visibleNodes.forEach(node => {
+      if (!node.collapsed && node.children) {
+        node.children.forEach(child => {
+          if (visibleNodes.includes(child)) {
+            visibleLinks.push({ source: node.id, target: child.id });
+          }
+        });
+      }
+    });
 
     const nodeSelection = graphGroup.selectAll(".node")
       .data(visibleNodes, d => d.id);
@@ -158,48 +163,46 @@ function renderGraph(nodes, links) {
     const tooltip = d3.select("#tooltip");
 
     nodesMerged
-  .on("mouseover", (event, d) => {
-    let html = `<strong>${d.id}</strong><br><em>Type:</em> ${d.type}<br>`;
+      .on("mouseover", (event, d) => {
+        let html = `<strong>${d.id}</strong><br><em>Type:</em> ${d.type}<br>`;
 
-    if (d.type === "CVE") {
-      html += `
-        <strong>Description:</strong> ${d.description || 'N/A'}<br>
-        <strong>Base Score:</strong> ${d.base_score || 'N/A'}<br>
-        <strong>Base Severity:</strong> ${d.base_severity || 'N/A'}<br>
-        <strong>CVSS Version:</strong> ${d.cvss_version || 'N/A'}<br>
-        <strong>CVSS Code:</strong> ${d.cvss_code || 'N/A'}<br>
-      `;
-    } else if (d.type === "Product") {
-      html += `
-        <strong>Product Name:</strong> ${d.name || 'N/A'}<br>
-        <strong>Vendor:</strong> ${d.vendor || 'N/A'}<br>
-      `;
-    } else if (d.type === "Version") {
-      html += `
-        <strong>Version Major:</strong> ${d.major || 'N/A'}<br>
-        <strong>Version Minor:</strong> ${d.minor || 'N/A'}<br>
-        <strong>Version Patch:</strong> ${d.patch || 'N/A'}<br>
-      `;
-    } else if (d.type === "Vendor") {
-      html += `
-        <strong>Vendor Name:</strong> ${d.vendor_name || 'N/A'}<br>
-      `;
-    }
-    // Outros tipos podem ser adicionados aqui se precisar
+        if (d.type === "CVE") {
+          html += `
+            <strong>Description:</strong> ${d.description || 'N/A'}<br>
+            <strong>Base Score:</strong> ${d.base_score || 'N/A'}<br>
+            <strong>Base Severity:</strong> ${d.base_severity || 'N/A'}<br>
+            <strong>CVSS Version:</strong> ${d.cvss_version || 'N/A'}<br>
+            <strong>CVSS Code:</strong> ${d.cvss_code || 'N/A'}<br>
+          `;
+        } else if (d.type === "Product") {
+          html += `
+            <strong>Product Name:</strong> ${d.name || 'N/A'}<br>
+            <strong>Vendor:</strong> ${d.vendor || 'N/A'}<br>
+          `;
+        } else if (d.type === "Version") {
+          html += `
+            <strong>Version Major:</strong> ${d.major || 'N/A'}<br>
+            <strong>Version Minor:</strong> ${d.minor || 'N/A'}<br>
+            <strong>Version Patch:</strong> ${d.patch || 'N/A'}<br>
+          `;
+        } else if (d.type === "Vendor") {
+          html += `
+            <strong>Vendor Name:</strong> ${d.vendor_name || 'N/A'}<br>
+          `;
+        }
 
-    tooltip.html(html)
-      .style("left", (event.pageX + 10) + "px")
-      .style("top", (event.pageY + 10) + "px")
-      .style("display", "block");
-  })
-  .on("mousemove", event => {
-    tooltip.style("left", (event.pageX + 10) + "px")
-      .style("top", (event.pageY + 10) + "px");
-  })
-  .on("mouseout", () => {
-    tooltip.style("display", "none");
-  });
-
+        tooltip.html(html)
+          .style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px")
+          .style("display", "block");
+      })
+      .on("mousemove", event => {
+        tooltip.style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px");
+      })
+      .on("mouseout", () => {
+        tooltip.style("display", "none");
+      });
   }
 
   function ticked() {

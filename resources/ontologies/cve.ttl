@@ -43,35 +43,15 @@
 ###  http://purl.org/cyber/cve#has_cve_affecting_product
 :has_cve_affecting_product rdf:type owl:ObjectProperty ;
                            rdfs:subPropertyOf owl:topObjectProperty ;
-                           rdfs:domain :Version ;
                            rdfs:range :CVE .
 
 
-###  http://purl.org/cyber/cve#has_first_version
-:has_first_version rdf:type owl:ObjectProperty ;
-                   rdfs:subPropertyOf owl:topObjectProperty ;
-                   rdfs:domain :Product ;
-                   rdfs:range :Version ;
-                   rdfs:comment "If this property relates a product with the \"None\" version, it means that the affected versions are all of them until the value pointed out by the \"has_last_version\" property" ,
-                                "Indicates the first version (including) of a product (in an interval of versions) that is affected by the vulnerability" .
-
-
-###  http://purl.org/cyber/cve#has_last_version
-:has_last_version rdf:type owl:ObjectProperty ;
-                  rdfs:subPropertyOf owl:topObjectProperty ;
-                  rdfs:domain :Product ;
-                  rdfs:range :Version ;
-                  rdfs:comment "If this property relates a product with the version \"None\", then it means that there is only one affected version pointed out by the 'has_first_version' property" ,
-                               "Indicates the last version (excluding) of a product (in an interval of versions) that is affected by the vulnerability" .
-
-
-###  http://purl.org/cyber/cve#has_product
-:has_product rdf:type owl:ObjectProperty ;
-             rdfs:subPropertyOf owl:topObjectProperty ;
-             owl:inverseOf :has_vendor ;
-             rdfs:domain :Vendor ;
-             rdfs:range :Product ;
-             rdfs:comment "Indicates which products are owned by the vendor" .
+###  http://purl.org/cyber/cve#has_owned_product
+:has_owned_product rdf:type owl:ObjectProperty ;
+                   owl:inverseOf :has_vendor ;
+                   rdfs:domain :Vendor ;
+                   rdfs:range :Product ;
+                   rdfs:comment "Indicates which products are owned by the vendor" .
 
 
 ###  http://purl.org/cyber/cve#has_references
@@ -179,7 +159,6 @@
 ###  http://purl.org/cyber/cve#version_major
 :version_major rdf:type owl:DatatypeProperty ;
                rdfs:subPropertyOf owl:topDataProperty ;
-               rdfs:domain :Version ;
                rdfs:range xsd:int ;
                rdfs:comment "Represents the major of a version" .
 
@@ -187,7 +166,6 @@
 ###  http://purl.org/cyber/cve#version_minor
 :version_minor rdf:type owl:DatatypeProperty ;
                rdfs:subPropertyOf owl:topDataProperty ;
-               rdfs:domain :Version ;
                rdfs:range xsd:int ;
                rdfs:comment "Represents the minor of a version" .
 
@@ -195,15 +173,13 @@
 ###  http://purl.org/cyber/cve#version_patch
 :version_patch rdf:type owl:DatatypeProperty ;
                rdfs:subPropertyOf owl:topDataProperty ;
-               rdfs:domain :Version ;
                rdfs:range xsd:int ;
                rdfs:comment "If the value is \"None\", then it means that there is no patch mentioned in the version" ,
                             "Represents the patch of a version" .
 
 
 ###  http://www.w3.org/2002/07/owl#topDataProperty
-owl:topDataProperty rdfs:domain :Version ;
-                    rdfs:range xsd:int .
+owl:topDataProperty rdfs:range xsd:int .
 
 
 #################################################################
@@ -259,14 +235,6 @@ owl:topDataProperty rdfs:domain :Version ;
 :Product rdf:type owl:Class ;
          rdfs:subClassOf :CVEThing ,
                          [ rdf:type owl:Restriction ;
-                           owl:onProperty :has_first_version ;
-                           owl:someValuesFrom :Version
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :has_last_version ;
-                           owl:someValuesFrom :Version
-                         ] ,
-                         [ rdf:type owl:Restriction ;
                            owl:onProperty :has_vendor ;
                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onClass :Vendor
@@ -306,7 +274,7 @@ owl:topDataProperty rdfs:domain :Version ;
 :Vendor rdf:type owl:Class ;
         rdfs:subClassOf :CVEThing ,
                         [ rdf:type owl:Restriction ;
-                          owl:onProperty :has_product ;
+                          owl:onProperty :has_owned_product ;
                           owl:someValuesFrom :Product
                         ] ,
                         [ rdf:type owl:Restriction ;
@@ -316,32 +284,6 @@ owl:topDataProperty rdfs:domain :Version ;
                         ] ;
         rdfs:comment "A vendor of a certain product affected by some CVE" ;
         rdfs:label "Vendor" .
-
-
-###  http://purl.org/cyber/cve#Version
-:Version rdf:type owl:Class ;
-         rdfs:subClassOf :CVEThing ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :has_cve_affecting_product ;
-                           owl:someValuesFrom :CVE
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :version_major ;
-                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                           owl:onDataRange owl:rational
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :version_minor ;
-                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                           owl:onDataRange owl:rational
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :version_patch ;
-                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                           owl:onDataRange owl:rational
-                         ] ;
-         rdfs:comment "A version, or range of versions, of a certain affected product" ;
-         rdfs:label "Version" .
 
 
 ###  http://purl.org/cyber/cve#Vulnerability

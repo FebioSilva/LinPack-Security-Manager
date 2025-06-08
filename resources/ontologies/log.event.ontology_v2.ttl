@@ -14,13 +14,6 @@
 #    Object Properties
 #################################################################
 
-###  http://www.semanticweb.org/logs-ontology-v2#replaced_by
-:replaced_by rdf:type owl:ObjectProperty ;
-             rdfs:subPropertyOf owl:topObjectProperty ;
-             rdfs:domain :Package ;
-             rdfs:range :Package .
-
-
 ###  http://www.semanticweb.org/logs-ontology-v2/has_package
 :has_package rdf:type owl:ObjectProperty ;
              rdfs:subPropertyOf owl:topObjectProperty ;
@@ -30,16 +23,16 @@
              rdfs:comment "Indicates which package is mentioned in a StateEvent or ActionEvent" .
 
 
+###  http://www.semanticweb.org/logs-ontology-v2/replaced_by
+:replaced_by rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             rdfs:domain :Package ;
+             rdfs:range :Package .
+
+
 #################################################################
 #    Data properties
 #################################################################
-
-###  http://www.semanticweb.org/logs-ontology-v2#installed
-:installed rdf:type owl:DatatypeProperty ;
-           rdfs:subPropertyOf owl:topDataProperty ;
-           rdfs:domain :Package ;
-           rdfs:range xsd:boolean .
-
 
 ###  http://www.semanticweb.org/logs-ontology-v2/action
 :action rdf:type owl:DatatypeProperty ;
@@ -79,6 +72,13 @@
           rdfs:domain :ConffileEvent ;
           rdfs:range xsd:string ;
           rdfs:comment "Represents the configuration file that will be either kept or discarded" .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/installed
+:installed rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain :Package ;
+           rdfs:range xsd:boolean .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/new_version

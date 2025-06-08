@@ -112,7 +112,7 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                                 # Sem versão — não cria nenhum intervalo
                                 pass
                             else:
-                                # Se existe intervalo explícito, cria ele
+                                # Se existe intervalo explícito, cria-o
                                 if start_incl or start_excl or end_incl or end_excl:
                                     min_v = start_incl or start_excl
                                     max_v = end_incl or end_excl
@@ -167,7 +167,7 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                     "cvssCode": cvss_data.get("vectorString"),
                 }
 
-                # ─── final object ──────────────────────────────────────────
+                # ─── Final object ──────────────────────────────────────────
                 cve_objects.append({
                     "id": cve_data["id"],
                     "description": description,
@@ -187,9 +187,9 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
     return cve_objects
 
 
-# ─────────────────────────────
+# ──────────────────────────────────
 #  (Opcional) – dump simples p/ TXT
-# ─────────────────────────────
+# ──────────────────────────────────
 
 def write_to_file(cve_list, output_file):
     """Grava as CVEs num ficheiro de texto human‑readable (debug/log)."""

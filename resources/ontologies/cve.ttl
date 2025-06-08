@@ -43,7 +43,9 @@
 ###  http://purl.org/cyber/cve#has_cve_affecting_product
 :has_cve_affecting_product rdf:type owl:ObjectProperty ;
                            rdfs:subPropertyOf owl:topObjectProperty ;
-                           rdfs:range :CVE .
+                           rdfs:domain :Versions ;
+                           rdfs:range :CVE ;
+                           rdfs:comment "Indicates which CVEs affect the version of the product" .
 
 
 ###  http://purl.org/cyber/cve#has_owned_product
@@ -74,7 +76,8 @@
 :has_version_interval rdf:type owl:ObjectProperty ;
                       rdfs:subPropertyOf owl:topObjectProperty ;
                       rdfs:domain :Product ;
-                      rdfs:range :Versions .
+                      rdfs:range :Versions ;
+                      rdfs:comment "Indicates which versions or version intervals the product has" .
 
 
 ###  http://purl.org/cyber/cve#has_vulnerability
@@ -130,14 +133,16 @@
 :max rdf:type owl:DatatypeProperty ;
      rdfs:subPropertyOf owl:topDataProperty ;
      rdfs:domain :Versions ;
-     rdfs:range xsd:string .
+     rdfs:range xsd:string ;
+     rdfs:comment "Represents the maximum version in a version interval" .
 
 
 ###  http://purl.org/cyber/cve#min
 :min rdf:type owl:DatatypeProperty ;
      rdfs:subPropertyOf owl:topDataProperty ;
      rdfs:domain :Versions ;
-     rdfs:range xsd:string .
+     rdfs:range xsd:string ;
+     rdfs:comment "Represents the minimum version in a version interval" .
 
 
 ###  http://purl.org/cyber/cve#product_name
@@ -152,7 +157,8 @@
 :pub_date rdf:type owl:DatatypeProperty ;
           rdfs:subPropertyOf owl:topDataProperty ;
           rdfs:domain :CVE ;
-          rdfs:range xsd:dateTime .
+          rdfs:range xsd:dateTime ;
+          rdfs:comment "Represents the date at which the CVE was published" .
 
 
 ###  http://purl.org/cyber/cve#ref_name
@@ -317,7 +323,9 @@ owl:topDataProperty rdfs:range xsd:int .
                             owl:onProperty :min ;
                             owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                             owl:onDataRange xsd:string
-                          ] .
+                          ] ;
+          rdfs:comment "A version or interval of versions of a certain product" ;
+          rdfs:label "Versions" .
 
 
 ###  http://purl.org/cyber/cve#Vulnerability

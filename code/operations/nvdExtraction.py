@@ -35,7 +35,7 @@ def is_linux_cpe(cpe):
 # ─────────────────────────────
 
 def fetch_cves_for_package(start_date: datetime, end_date: datetime):
-    """Download CVEs from the NVD API 2.0 within a date window and return a
+    """Download CVEs from the NVD API 2.0 within a date window and return a 
     list of Python dicts already filtered down to Linux-related CPEs."""
 
     url = "https://services.nvd.nist.gov/rest/json/cves/2.0/"

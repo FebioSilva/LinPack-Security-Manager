@@ -12,8 +12,11 @@ function renderGraph(nodes, links) {
   });
   svg.call(zoom);
   svg.call(zoom.transform, d3.zoomIdentity);
+
+  // Cria mapa de nodes para acesso rápido e inicializa collapsed=true e children=[]
   const nodesMap = new Map(nodes.map(n => [n.id, { ...n, children: [], collapsed: true }]));
 
+  // Constrói árvore de filhos baseada nos links (para expandir/collapse)
   links.forEach(link => {
     const source = nodesMap.get(link.source);
     const target = nodesMap.get(link.target);
@@ -26,9 +29,10 @@ function renderGraph(nodes, links) {
     }
   });
 
+  // Identifica os nodes topo da hierarquia (Products)
   const topNodes = Array.from(nodesMap.values()).filter(n => n.type === "Product");
 
-  // Inicializa posições aleatórias para todos os nodes para evitar concentração
+  // Posição inicial aleatória para todos os nodes
   nodesMap.forEach(node => {
     node.x = Math.random() * width * 0.8 + width * 0.1;
     node.y = Math.random() * height * 0.8 + height * 0.1;
@@ -49,20 +53,34 @@ function renderGraph(nodes, links) {
 
   let nodesMerged, linksMerged;
 
+  // Função recursiva para coletar nodes visíveis (expandindo)
+  function collectVisible(node) {
+    visibleNodes.push(node);
+    if (!node.collapsed && node.children?.length > 0) {
+      node.children.forEach(collectVisible);
+    }
+  }
+
   function update() {
     visibleNodes = [];
     visibleLinks = [];
 
-    function collectVisible(node) {
-      visibleNodes.push(node);
-      if (!node.collapsed && node.children) {
-        node.children.forEach(child => collectVisible(child));
-      }
-    }
-
+    // Começa coletando nodes topo visíveis
     topNodes.forEach(collectVisible);
 
-    // Corrigido: só adiciona links entre nodes visíveis pai -> filho
+    // Posiciona filhos de nodes expandidos em círculo ao redor do pai
+    visibleNodes.forEach(node => {
+      if (!node.collapsed && node.children?.length > 0) {
+        const angleStep = (2 * Math.PI) / node.children.length;
+        const radius = 50 + node.children.length * 10;
+        node.children.forEach((child, i) => {
+          child.x = node.x + radius * Math.cos(i * angleStep);
+          child.y = node.y + radius * Math.sin(i * angleStep);
+        });
+      }
+    });
+
+    // Define links entre nodes visíveis e seus filhos expandidos
     visibleNodes.forEach(node => {
       if (!node.collapsed && node.children) {
         node.children.forEach(child => {
@@ -73,6 +91,22 @@ function renderGraph(nodes, links) {
       }
     });
 
+    // Adiciona links extras CVE → Product (mesmo que CVE não seja filho do Product)
+    // Para isso, percorremos todos links originais e adicionamos os links do tipo CVE → Product
+    links.forEach(link => {
+      const source = nodesMap.get(link.source);
+      const target = nodesMap.get(link.target);
+      if (!source || !target) return;
+
+      if (source.type === "CVE" && target.type === "Product") {
+        // Só adiciona o link se ambos os nodes estiverem visíveis
+        if (visibleNodes.includes(source) && visibleNodes.includes(target)) {
+          visibleLinks.push({ source: source.id, target: target.id });
+        }
+      }
+    });
+
+    // Seleção dos nodes
     const nodeSelection = graphGroup.selectAll(".node")
       .data(visibleNodes, d => d.id);
 
@@ -88,19 +122,8 @@ function renderGraph(nodes, links) {
             .transition().duration(300)
             .attr("r", d.collapsed ? 12 : 18);
 
-          if (!d.collapsed) {
-            // Posiciona filhos em círculo ao redor do pai
-            const angleStep = (2 * Math.PI) / d.children.length;
-            const radius = 50 + d.children.length * 10;
-            d.children.forEach((child, i) => {
-              const angle = i * angleStep;
-              child.x = d.x + radius * Math.cos(angle);
-              child.y = d.y + radius * Math.sin(angle);
-            });
-          }
-
           update();
-          simulation.alpha(0.3).restart();
+          simulation.alpha(0.5).restart();
         }
       })
       .call(d3.drag()
@@ -143,6 +166,7 @@ function renderGraph(nodes, links) {
 
     nodesMerged = nodeEnter.merge(nodeSelection);
 
+    // Seleção dos links
     const linkSelection = graphGroup.selectAll("line")
       .data(visibleLinks, d => `${d.source}-${d.target}`);
 
@@ -156,10 +180,11 @@ function renderGraph(nodes, links) {
 
     simulation.nodes(visibleNodes);
     simulation.force("link").links(visibleLinks);
-    simulation.alpha(0.3).restart();
+    simulation.alpha(0.5).restart();
 
     graphGroup.selectAll(".node").raise();
 
+    // Tooltip
     const tooltip = d3.select("#tooltip");
 
     nodesMerged
@@ -181,9 +206,8 @@ function renderGraph(nodes, links) {
           `;
         } else if (d.type === "Version") {
           html += `
-            <strong>Version Major:</strong> ${d.major || 'N/A'}<br>
-            <strong>Version Minor:</strong> ${d.minor || 'N/A'}<br>
-            <strong>Version Patch:</strong> ${d.patch || 'N/A'}<br>
+            <strong>Min:</strong> ${d.min || 'N/A'}<br>
+            <strong>Max:</strong> ${d.max || 'N/A'}<br>
           `;
         } else if (d.type === "Vendor") {
           html += `

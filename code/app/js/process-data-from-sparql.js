@@ -53,7 +53,7 @@ SELECT DISTINCT
   ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
   ?product ?product_name
   ?vendor ?vendor_name
-  ?version_min ?version_max
+  ?version_interval ?version_min ?version_max
 WHERE {
   ?cve a cve:CVE ;
        cve:description ?description ;
@@ -67,13 +67,16 @@ WHERE {
            cve:product_name ?product_name ;
            cve:has_vendor ?vendor ;
            cve:has_version_interval ?version_interval .
+  
 
   ?vendor a cve:Vendor ;
           cve:vendor_name ?vendor_name .
 
   ?version_interval a cve:Versions ;
-                    cve:min ?version_min ;
-                    cve:max ?version_max .
+                    cve:has_cve_affecting_product ?cve .
+
+  OPTIONAL { ?version_interval cve:min ?version_min . }
+  OPTIONAL { ?version_interval cve:max ?version_max . }
 }`
 
 const highestSeverityCVEsQuery = `
@@ -179,9 +182,11 @@ async function fetchDataFromSPARQLEndPoint(query, signal) {
 
 function extractLocalName(uri) {
   if (!uri) return null;
-  const match = uri.match(/[#\/]([^#\/]+)$/);
-  return match ? match[1] : uri;
+  const hashIndex = uri.lastIndexOf('#');
+  const slashIndex = uri.lastIndexOf('/');
+  return uri.substring(Math.max(hashIndex, slashIndex) + 1);
 }
+
 
 /**
   * Process log data to create a graph structure
@@ -283,7 +288,6 @@ function processCVEDataToGraph(bindings) {
     const cveUri = entry.cve.value;
     const cveId = extractLocalName(cveUri);
 
-    // Nó CVE
     if (!nodesMap.has(cveId)) {
       nodesMap.set(cveId, {
         id: cveId,
@@ -297,11 +301,9 @@ function processCVEDataToGraph(bindings) {
       });
     }
 
-    const cveNode = nodesMap.get(cveId);
-
-    // Produto
     const productName = entry.product_name?.value;
     const vendorName = entry.vendor_name?.value;
+    const productUri = entry.product?.value;
     const productId = `prod_${productName}`;
 
     if (productName && !nodesMap.has(productId)) {
@@ -310,40 +312,40 @@ function processCVEDataToGraph(bindings) {
         type: "Product",
         name: productName,
         vendor: vendorName,
+        uri: productUri
       });
       productVersionsMap.set(productId, new Map());
     }
 
-    // Versões (min e max)
-    const versionData = [
-      { versionUri: entry.version_min?.value },
-      { versionUri: entry.version_max?.value }
-    ];
+    const versionUri = entry.version_interval?.value;
+    if (versionUri) {
+      const versionId = extractLocalName(versionUri);
 
-    if (productName) {
-      versionData.forEach(({ versionUri }) => {
-        if (versionUri) {
-          const versionId = `version_${extractLocalName(versionUri)}`;
+      if (!productVersionsMap.get(productId)?.has(versionId)) {
+        nodesMap.set(versionId, {
+          id: versionId,
+          type: "Version",
+          uri: versionUri,
+          min: entry.version_min?.value || null,
+          max: entry.version_max?.value || null,
+        });
 
-          if (!productVersionsMap.get(productId).has(versionId)) {
-            nodesMap.set(versionId, {
-              id: versionId,
-              type: "Version",
-              uri: versionUri,
-              // Se tiver mais info de versão, pode ser incluída aqui
-            });
-            productVersionsMap.get(productId).set(versionId, true);
+        productVersionsMap.get(productId).set(versionId, true);
 
-            links.push({ source: productId, target: versionId, type: "has_version" });
-          }
+        links.push({ source: productId, target: versionId, type: "has_version" });
+      }
 
-          links.push({ source: versionId, target: cveId, type: "has_cve_affecting_product" });
-        }
-      });
+      links.push({ source: versionId, target: cveId, type: "affects" });
+    }
 
-      links.push({ source: productId, target: cveId, type: "affects_product" });
+    // Aqui a alteração principal da ligação:
+    if (productName && cveId) {
+      console.log(`Criando link has_affected_product de ${cveId} para ${productId}`);
+      links.push({ source: cveId, target: productId, type: "has_affected_product" });
     }
   });
+
+  console.log(`Total nós: ${nodesMap.size}, Total links: ${links.length}`);
 
   return {
     nodes: Array.from(nodesMap.values()),

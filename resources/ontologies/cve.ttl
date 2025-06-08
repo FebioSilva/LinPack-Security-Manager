@@ -201,6 +201,10 @@ owl:topDataProperty rdfs:range xsd:int .
 :CVE rdf:type owl:Class ;
      rdfs:subClassOf :CVEThing ,
                      [ rdf:type owl:Restriction ;
+                       owl:onProperty :has_affected_product ;
+                       owl:someValuesFrom :Product
+                     ] ,
+                     [ rdf:type owl:Restriction ;
                        owl:onProperty :has_references ;
                        owl:someValuesFrom :References
                      ] ,

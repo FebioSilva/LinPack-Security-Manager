@@ -1,4 +1,4 @@
-from SPARQLWrapper import SPARQLWrapper, POST, JSON
+from SPARQLWrapper import SPARQLWrapper, POST, ASK, JSON
 
 # SPARQL endpoint URL (replace with your actual endpoint)
 SPARQL_ENDPOINT = "http://localhost:8890/sparql"
@@ -11,6 +11,10 @@ SPARQL_ENDPOINT = "http://localhost:8890/sparql"
 sparql = SPARQLWrapper(SPARQL_ENDPOINT)
 # sparql.setCredentials(USERNAME, PASSWORD)
 
+def ask_for_package(query):
+    sparql.setMethod(ASK)
+    sparql.setQuery(query)
+    sparql.query()
 
 def insert_into_graph(query):
     sparql.setMethod(POST)

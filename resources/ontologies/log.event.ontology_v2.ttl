@@ -50,14 +50,6 @@
          rdfs:comment "Represents the command given in a StartUpEvent" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/current_version
-:current_version rdf:type owl:DatatypeProperty ;
-                 rdfs:subPropertyOf owl:topDataProperty ;
-                 rdfs:domain :Package ;
-                 rdfs:range xsd:string ;
-                 rdfs:comment "Represents the current version of a package" .
-
-
 ###  http://www.semanticweb.org/logs-ontology-v2/decision
 :decision rdf:type owl:DatatypeProperty ;
           rdfs:subPropertyOf owl:topDataProperty ;
@@ -79,14 +71,6 @@
            rdfs:subPropertyOf owl:topDataProperty ;
            rdfs:domain :Package ;
            rdfs:range xsd:boolean .
-
-
-###  http://www.semanticweb.org/logs-ontology-v2/new_version
-:new_version rdf:type owl:DatatypeProperty ;
-             rdfs:subPropertyOf owl:topDataProperty ;
-             rdfs:domain :Package ;
-             rdfs:range xsd:string ;
-             rdfs:comment "Represents the new version of a package after an event that install or update a package" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/package_architecture
@@ -127,6 +111,14 @@
       rdfs:domain :StartupEvent ;
       rdfs:range xsd:string ;
       rdfs:comment "Represents the type given in a StartUpEvent" .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/version
+:version rdf:type owl:DatatypeProperty ;
+         rdfs:subPropertyOf owl:topDataProperty ;
+         rdfs:domain :Package ;
+         rdfs:range xsd:string ;
+         rdfs:comment "Represents the current version of a package" .
 
 
 #################################################################
@@ -203,12 +195,7 @@
                            owl:onDataRange xsd:string
                          ] ,
                          [ rdf:type owl:Restriction ;
-                           owl:onProperty :current_version ;
-                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                           owl:onDataRange xsd:string
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :new_version ;
+                           owl:onProperty :version ;
                            owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onDataRange xsd:string
                          ] ;

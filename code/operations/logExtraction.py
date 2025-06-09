@@ -39,7 +39,7 @@ class LogParser:
                 # Check and store matches
                 if action_match:
                     action = action_match.group("action")
-                    if (action == "install"):
+                    if action == "install":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
                             "timestamp": action_match.group("timestamp").replace(" ", "T"),
@@ -50,7 +50,7 @@ class LogParser:
                             "version": action_match.group("version_new")
                         })
 
-                    elif(action == "upgrade"):
+                    elif action == "upgrade":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
                             "timestamp": action_match.group("timestamp").replace(" ", "T"),
@@ -62,7 +62,7 @@ class LogParser:
                             "replace": action_match.group("version_old")
                         })
 
-                    elif(action == "remove"):
+                    elif action == "remove" or action == "purge":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
                             "timestamp": action_match.group("timestamp").replace(" ", "T"),

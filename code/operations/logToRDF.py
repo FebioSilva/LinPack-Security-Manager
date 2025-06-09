@@ -63,7 +63,7 @@ INSERT DATA {{
                         logs:installed True .
             """
                 
-            elif log_obj["action"] == "remove":
+            elif log_obj["action"] == "remove" or log_obj["action"] == "purge":
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
                         logs:package_name "{log_obj['package']}" ;

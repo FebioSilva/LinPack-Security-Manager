@@ -20,7 +20,7 @@ class LogParser:
 
                 # Match state logs
                 state_match = re.match(
-                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) status (?P<state>[\w-]+) (?P<package>[\w\-\.\+]+):(?P<architecture>[\w\d\-]+) (?P<version>[\w\.\-:]+)",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) status (?P<state>[\w-]+) (?P<package>[\w\-\.\+]+):(?P<architecture>[\w\d\-]+) (?P<version>[\w\.\-\~:]+)",
                     line
                 )
 
@@ -50,7 +50,7 @@ class LogParser:
                             "version": action_match.group("version_new")
                         })
 
-                    if(action == "upgrade"):
+                    elif(action == "upgrade"):
                         self.parsed_logs.append({
                             "log_id": self.log_id,
                             "timestamp": action_match.group("timestamp").replace(" ", "T"),

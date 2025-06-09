@@ -14,6 +14,8 @@ SELECT
   ?package_name
   ?package_version
   ?package_architecture
+  ?package_installed
+  ?package_replaced_by
 FROM <http://localhost:8890/linpack>
 WHERE {
   ## Apenas estes quatro tipos de evento
@@ -40,8 +42,11 @@ WHERE {
     ?log  logs:has_package ?package .
     ?package
       logs:package_name         ?package_name ;
-      logs:current_version      ?package_version ;
-      logs:package_architecture ?package_architecture .
+      logs:version              ?package_version ;
+      logs:package_architecture ?package_architecture ;
+      logs:installed            ?package_installed .
+      
+    OPTIONAL { ?package logs:replaced_by ?package_replaced_by }
   }
 }
 ORDER BY ?timestamp`

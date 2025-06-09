@@ -52,6 +52,8 @@ def process_version_interval(version, start_v, end_v, cve_id):
         ver_id = f"cve:vers_{sanitize_for_blank_node(version)}"
         ver_block = f"""    {ver_id} a cve:Versions ;
         cve:version "{escape_string_for_sparql(version)}" ;
+        cve:min "{escape_string_for_sparql(version)}" ;
+        cve:max "{escape_string_for_sparql(version)}" ;
         cve:has_cve_affecting_product cve:{cve_id} ."""
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
@@ -197,14 +199,44 @@ INSERT DATA {{
         for i in range(0, len(lines), chunk):
             yield (
                 sparql_prefix + f"""
-INSERT DATA {{
-  GRAPH <{graph_uri}> {{
-{chr(10).join(lines[i:i+chunk])}
-  }}
-}}"""
+                    INSERT DATA {{
+                    GRAPH <{graph_uri}> {{
+                    {chr(10).join(lines[i:i+chunk])}
+                    }}
+                    }}"""
             )
 
     queries.extend(batch_insert(product_lines))
     queries.extend(batch_insert(vendor_lines))
     queries.extend(batch_insert(version_lines))
     return queries
+
+
+if __name__ == "__main__":
+    # Exemplo de uso
+    cve_example = {
+        "id": "CVE-2023-12345",
+        "pubDate": datetime(2023, 10, 1, 12, 0),
+        "description": "This is a test CVE description.\nIt has multiple lines.",
+        "severity": {
+            "baseScore": 7.5,
+            "baseSeverity": "HIGH",
+            "cvssVersion": "3.1",
+            "cvssCode": "AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+        },
+        "references": [
+            {"source": "NVD", "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-12345"}
+        ],
+        "cpe": [
+            {
+                "vendor": "example_vendor",
+                "product": "example_product",
+                "version_intervals": [
+                    {"min": "1.0", "max": "2.0"}
+                ]
+            }
+        ]
+    }
+    queries = cve_object_to_sparql(cve_example)
+    for query in queries:
+        print(query)

@@ -160,6 +160,7 @@ function renderGraph(nodes, links) {
       });
 
     nodeEnter.append("text")
+      .attr("class", "node-label")
       .text(d => d.id)
       .attr("dx", 18)
       .attr("dy", ".35em");

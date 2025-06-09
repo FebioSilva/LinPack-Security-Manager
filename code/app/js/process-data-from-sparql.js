@@ -5,50 +5,51 @@ PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
 SELECT
   ?log
   ?type
-  ?time_occurred
-  ?event_action
-  ?event_state
   ?timestamp
   ?action
   ?state
   ?decision
   ?context
   ?command
-
+  ?package
+  ?package_name
+  ?package_version
+  ?package_architecture
+  ?installed
+  ?replaced_by
 FROM <http://localhost:8890/linpack>
 WHERE {
-  ## Apenas estes quatro tipos de evento
+  ## quatro tipos de evento
   ?log rdf:type ?type .
   FILTER(?type IN (
     logs:StateEvent,
     logs:ActionEvent,
-    logs:ConfigFileEvent,
+    logs:ConffileEvent,
     logs:StartupEvent
   ))
-  
-  ## Timestamp comum a todos (renomeado)
-  ?log logs:time_occurred ?time_occurred .
-  
-  ## Propriedades específicas de cada tipo (renomeadas)
-  OPTIONAL { ?log logs:event_action   ?event_action }      # ActionEvent
-  OPTIONAL { ?log logs:event_state    ?event_state  }      # StateEvent
-  OPTIONAL { ?log logs:decision       ?decision }          # ConfigFileEvent
-  OPTIONAL { ?log logs:context        ?context }           # StartupEvent
-  OPTIONAL { ?log logs:command        ?command }           # StartupEvent
 
-  ## Pacote (só para ActionEvent e StateEvent) - renomeado
+  ## timestamp comum
+  ?log logs:timestamp ?timestamp .
+
+  ## propriedades específicas
+  OPTIONAL { ?log logs:action   ?action }     # ActionEvent
+  OPTIONAL { ?log logs:state    ?state  }     # StateEvent
+  OPTIONAL { ?log logs:decision ?decision }   # ConffileEvent
+  OPTIONAL { ?log logs:context  ?context }    # StartupEvent
+  OPTIONAL { ?log logs:command  ?command }    # StartupEvent
+
+  ## pacotes (ActionEvent / StateEvent)
   OPTIONAL {
-    ?log  logs:has_package ?package .
+    ?log logs:has_package ?package .
     ?package
       logs:package_name         ?package_name ;
       logs:version              ?package_version ;
       logs:package_architecture ?package_architecture ;
-      logs:installed            ?package_installed .
-      
-    OPTIONAL { ?package logs:replaced_by ?package_replaced_by }
+      logs:installed            ?installed .
+    OPTIONAL { ?package logs:replaced_by ?replaced_by }
   }
 }
-ORDER BY ?time_occurred
+ORDER BY ?timestamp
 `
 
 const queryCVE=`PREFIX cve: <http://purl.org/cyber/cve#>
@@ -216,50 +217,34 @@ function processLogDataToGraph(bindings) {
         type: eventType,
       };
 
-      // Propriedades comuns atualizadas
-      if (entry.time_occurred) {
-        node["timestamp"] = entry.time_occurred.value;
-      }
-
-      // Propriedades específicas dos tipos atualizadas
-      if (eventType === "ActionEvent" && entry.event_action) {
-        node["action"] = entry.event_action.value;
-      }
-
-      if (eventType === "StateEvent" && entry.event_state) {
-        node["state"] = entry.event_state.value;
-      }
-
-      if (eventType === "ConfigFileEvent" && entry.decision) {
-        node["decision"] = entry.decision.value;
-      }
-
+      if (entry.timestamp) node.timestamp = entry.timestamp.value;
+      if (eventType === "ActionEvent" && entry.action) node.action = entry.action.value;
+      if (eventType === "StateEvent" && entry.state) node.state = entry.state.value;
+      if (eventType === "ConffileEvent" && entry.decision) node.decision = entry.decision.value;
       if (eventType === "StartupEvent") {
-        if (entry.context) node["context"] = entry.context.value;
-        if (entry.command) node["command"] = entry.command.value;
+        if (entry.context) node.context = entry.context.value;
+        if (entry.command) node.command = entry.command.value;
       }
 
       nodesMap.set(logId, node);
     }
 
-    // Pacote com nomes alterados
-    const pkgName = entry.pkg_name?.value;
-    const pkgVersion = entry.pkg_version?.value;
-    const pkgArch = entry.pkg_arch?.value;
+    // Aqui o principal ajuste: nomes corretos conforme queryLog
+    const pkgName = entry.package_name?.value;
+    const pkgVersion = entry.package_version?.value;
+    const pkgArch = entry.package_architecture?.value;
 
     if (pkgName) {
       const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
-
       if (!nodesMap.has(pkgId)) {
-        const pkgNode = {
+        nodesMap.set(pkgId, {
           id: pkgId,
           type: "Package",
-          "package_name": pkgName,
-          "current_version": pkgVersion,
-          "package_architecture": pkgArch,
-        };
-
-        nodesMap.set(pkgId, pkgNode);
+          package_name: pkgName,
+          current_version: pkgVersion,
+          package_architecture: pkgArch,
+          installed: entry.installed?.value === "true" || entry.installed?.value === "1",
+        });
       }
 
       links.push({
@@ -272,6 +257,8 @@ function processLogDataToGraph(bindings) {
 
   return { nodes: Array.from(nodesMap.values()), links };
 }
+
+
 
 
 function processCVEDataToGraph(bindings) {

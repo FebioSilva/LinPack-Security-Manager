@@ -50,7 +50,7 @@ class LogParser:
                             "version": action_match.group("version_new")
                         })
 
-                    elif(action == "upgrade"):
+                    if(action == "upgrade"):
                         self.parsed_logs.append({
                             "log_id": self.log_id,
                             "timestamp": action_match.group("timestamp").replace(" ", "T"),
@@ -145,11 +145,12 @@ class LogParser:
 
 # Exemplo de uso
 if __name__ == "__main__":
-    # Substitua pelo caminho real do seu arquivo de log
+    # Change it for the real path to the dpkg.log file
     input_file = "../resources/dpkg.log"
 
     parser = LogParser(input_file)
     parser.parse_log()
     parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
     print("Parsed logs:")
+    installed_logs = [log for log in parsed_logs if log["type"] == "action" and log["action"] == "install"]
     print(parsed_logs)  # Print parsed logs for debugging

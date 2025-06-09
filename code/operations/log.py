@@ -1,5 +1,6 @@
 import logExtraction
 import logToRDF
+import logAuxiliary
 import dbOperations
 
 if __name__ == "__main__":
@@ -10,6 +11,13 @@ if __name__ == "__main__":
     for log in parser.parsed_logs:
         print(log)
         print("*****************************************")
+        if log["type"] == "action":
+            ask_for_package_query = logAuxiliary.ask_for_package_to_sparql(log)
+            pkg_exists = dbOperations.ask_for_package(ask_for_package_query)["boolean"]
+            print(pkg_exists)
+            if pkg_exists and not log["action"] == "configure":
+                delete_package_query = logAuxiliary.delete_package_to_sparql(log)
+                dbOperations.delete_package(delete_package_query)
         log_in_sparql = logToRDF.dpkg_log_to_sparql(log)
         print(log_in_sparql)
         dbOperations.insert_into_graph(log_in_sparql)

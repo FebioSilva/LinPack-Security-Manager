@@ -8,12 +8,13 @@ SELECT
   ?time_occurred
   ?event_action
   ?event_state
+  ?timestamp
+  ?action
+  ?state
   ?decision
   ?context
   ?command
-  ?pkg_name
-  ?pkg_version
-  ?pkg_arch
+
 FROM <http://localhost:8890/linpack>
 WHERE {
   ## Apenas estes quatro tipos de evento
@@ -39,9 +40,12 @@ WHERE {
   OPTIONAL {
     ?log  logs:has_package ?package .
     ?package
-      logs:pkg_name        ?pkg_name ;
-      logs:pkg_version     ?pkg_version ;
-      logs:pkg_arch        ?pkg_arch .
+      logs:package_name         ?package_name ;
+      logs:version              ?package_version ;
+      logs:package_architecture ?package_architecture ;
+      logs:installed            ?package_installed .
+      
+    OPTIONAL { ?package logs:replaced_by ?package_replaced_by }
   }
 }
 ORDER BY ?time_occurred

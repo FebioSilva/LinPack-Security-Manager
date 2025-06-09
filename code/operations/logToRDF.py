@@ -87,7 +87,7 @@ INSERT DATA {{
                         logs:package_name "{log_obj['package']}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
-                        logs:installed False .
+                        logs:installed True .
             """
 
     sparql += """

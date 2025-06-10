@@ -77,7 +77,6 @@ venv.bak/
 *.sqlite3
 
 # Logs and databases
-*.log
 *.sql
 *.sqlite
 

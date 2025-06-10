@@ -141,7 +141,7 @@ WHERE {
     ?log rdf:type ?type ;
          logs:timestamp ?timestamp ;
          logs:has_package ?package .
-    FILTER(?type IN (logs:StateEvent, logs:ActionEvent))
+    FILTER(?type IN (logs:StateEvent, logs:ActionEvent, logs:StartupEvent, logs:ConffileEvent))
 
     ## Package details
     ?package logs:package_name ?package_name ;
@@ -174,10 +174,9 @@ WHERE {
     (!BOUND(?version_max) || xsd:string(?package_version) <= xsd:string(?version_max))
   )
 }
-ORDER BY ?timestamp
 `
 
-const logsAndCVEsInstalled = `
+const logsAndCVEsMyPkgs = `
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
 PREFIX cve:  <http://purl.org/cyber/cve#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -237,7 +236,6 @@ WHERE {
     (!BOUND(?version_max) || xsd:string(?package_version) <= xsd:string(?version_max))
   )
 }
-ORDER BY ?timestamp
 `
 
 function generateCVEQueryByYear(year) {

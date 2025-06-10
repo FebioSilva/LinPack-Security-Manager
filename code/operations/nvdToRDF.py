@@ -115,12 +115,13 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     if pub_dt:
         preds.append(f'cve:pub_date "{pub_dt}"^^xsd:dateTime')
 
+    join_breaker = ' ;\n        '
     queries.append(
         sparql_prefix + f"""
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
     cve:{cve_id} a cve:CVE ;
-        {' ;\n        '.join(preds)} .
+        {join_breaker.join(preds)} .
   }}
 }}"""
     )

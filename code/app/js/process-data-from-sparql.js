@@ -11,14 +11,15 @@ SELECT
   ?decision
   ?context
   ?command
+  ?package
   ?package_name
   ?package_version
   ?package_architecture
-  ?package_installed
-  ?package_replaced_by
+  ?installed
+  ?replaced_by
 FROM <http://localhost:8890/linpack>
 WHERE {
-  ## Apenas estes quatro tipos de evento
+  ## quatro tipos de evento
   ?log rdf:type ?type .
   FILTER(?type IN (
     logs:StateEvent,
@@ -26,30 +27,30 @@ WHERE {
     logs:ConffileEvent,
     logs:StartupEvent
   ))
-  
-  ## Timestamp comum a todos
-  ?log logs:timestamp ?timestamp .
-  
-  ## Propriedades específicas de cada tipo
-  OPTIONAL { ?log logs:action   ?action }      # ActionEvent
-  OPTIONAL { ?log logs:state    ?state  }      # StateEvent
-  OPTIONAL { ?log logs:decision ?decision }    # ConfFileEvent
-  OPTIONAL { ?log logs:context  ?context }     # StartUpEvent
-  OPTIONAL { ?log logs:command  ?command }     # StartUpEvent
 
-  ## Pacote (só para ActionEvent e StateEvent)
+  ## timestamp comum
+  ?log logs:timestamp ?timestamp .
+
+  ## propriedades específicas
+  OPTIONAL { ?log logs:action   ?action }     # ActionEvent
+  OPTIONAL { ?log logs:state    ?state  }     # StateEvent
+  OPTIONAL { ?log logs:decision ?decision }   # ConffileEvent
+  OPTIONAL { ?log logs:context  ?context }    # StartupEvent
+  OPTIONAL { ?log logs:command  ?command }    # StartupEvent
+
+  ## pacotes (ActionEvent / StateEvent)
   OPTIONAL {
-    ?log  logs:has_package ?package .
+    ?log logs:has_package ?package .
     ?package
       logs:package_name         ?package_name ;
       logs:version              ?package_version ;
       logs:package_architecture ?package_architecture ;
-      logs:installed            ?package_installed .
-      
-    OPTIONAL { ?package logs:replaced_by ?package_replaced_by }
+      logs:installed            ?installed .
+    OPTIONAL { ?package logs:replaced_by ?replaced_by }
   }
 }
-ORDER BY ?timestamp`
+ORDER BY ?timestamp
+`
 
 const queryCVE=`PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -106,9 +107,9 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT ?product ?productName (COUNT(?cve) AS ?numCVEs)
 WHERE {
+  ?cve :has_affected_product ?product .
   ?product rdf:type :Product .
   ?product :product_name ?productName .
-  ?product :has_cve ?cve .
 }
 GROUP BY ?product ?productName
 ORDER BY DESC(?numCVEs)
@@ -200,7 +201,7 @@ function extractLocalName(uri) {
   * */
 
 function processLogDataToGraph(bindings) {
-  const nodesMap = new Map(); // We use a Map to assure the unicity of the nodes
+  const nodesMap = new Map();
   const links = [];
 
   bindings.forEach(entry => {
@@ -209,7 +210,6 @@ function processLogDataToGraph(bindings) {
     const eventTypeURI = entry.type?.value;
     const eventType = extractLocalName(eventTypeURI);
 
-    // If the node wasn't already added to the Map...
     if (!nodesMap.has(logId)) {
       const node = {
         id: logId,
@@ -217,72 +217,49 @@ function processLogDataToGraph(bindings) {
         type: eventType,
       };
 
-      // Common properties
-      if (entry.timestamp) {
-        node["timestamp"] = entry.timestamp.value;
-      }
-
-      // Type properties
-      if (eventType === "ActionEvent" && entry.action) {
-        node["action"] = entry.action.value;
-      }
-
-      if (eventType === "StateEvent" && entry.state) {
-        node["state"] = entry.state.value;
-      }
-
-      if (eventType === "ConffileEvent" && entry.decision) {
-        node["decision"] = entry.decision.value;
-      }
-
+      if (entry.timestamp) node.timestamp = entry.timestamp.value;
+      if (eventType === "ActionEvent" && entry.action) node.action = entry.action.value;
+      if (eventType === "StateEvent" && entry.state) node.state = entry.state.value;
+      if (eventType === "ConffileEvent" && entry.decision) node.decision = entry.decision.value;
       if (eventType === "StartupEvent") {
-        if (entry.context) node["context"] = entry.context.value;
-        if (entry.command) node["command"] = entry.command.value;
+        if (entry.context) node.context = entry.context.value;
+        if (entry.command) node.command = entry.command.value;
       }
 
-      // Adds the node to the map
       nodesMap.set(logId, node);
     }
 
-    // If it has a package...
+    // Aqui o principal ajuste: nomes corretos conforme queryLog
     const pkgName = entry.package_name?.value;
     const pkgVersion = entry.package_version?.value;
     const pkgArch = entry.package_architecture?.value;
 
     if (pkgName) {
       const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
-
-      // If the package hasn't been already added to the map...
       if (!nodesMap.has(pkgId)) {
-        const pkgNode = {
+        nodesMap.set(pkgId, {
           id: pkgId,
           type: "Package",
-          "package_name": pkgName,
-          "current_version": pkgVersion,
-          "package_architecture": pkgArch
-        };
-
-        // Adds the package to the map
-        nodesMap.set(pkgId, pkgNode);
+          package_name: pkgName,
+          current_version: pkgVersion,
+          package_architecture: pkgArch,
+          installed: entry.installed?.value === "true" || entry.installed?.value === "1",
+        });
       }
 
-      // Creates the link: log -> package
       links.push({
         source: logId,
         target: pkgId,
-        type: "has_package"
+        type: "has_package",
       });
     }
   });
 
-  // Converts the map back to an array of nodes
-  const nodes = Array.from(nodesMap.values());
-
-  return {
-    nodes,
-    links
-  };
+  return { nodes: Array.from(nodesMap.values()), links };
 }
+
+
+
 
 function processCVEDataToGraph(bindings) {
   const nodesMap = new Map();
@@ -345,7 +322,6 @@ function processCVEDataToGraph(bindings) {
 
     // Aqui a alteração principal da ligação:
     if (productName && cveId) {
-      console.log(`Criando link has_affected_product de ${cveId} para ${productId}`);
       links.push({ source: cveId, target: productId, type: "has_affected_product" });
     }
   });

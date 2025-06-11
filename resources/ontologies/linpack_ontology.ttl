@@ -20,6 +20,16 @@
 <http://purl.org/cyber/cve#has_owned_product> rdfs:subPropertyOf owl:topObjectProperty .
 
 
+###  http://www.semanticweb.org/linpack#has_related_interval
+:has_related_interval rdf:type owl:ObjectProperty ;
+                      rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  http://www.semanticweb.org/linpack#has_related_product
+:has_related_product rdf:type owl:ObjectProperty ;
+                     rdfs:subPropertyOf owl:topObjectProperty .
+
+
 #################################################################
 #    Data properties
 #################################################################

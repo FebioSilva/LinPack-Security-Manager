@@ -43,6 +43,7 @@
 ###  http://purl.org/cyber/cve#has_cve_affecting_product
 :has_cve_affecting_product rdf:type owl:ObjectProperty ;
                            rdfs:subPropertyOf owl:topObjectProperty ;
+                           rdfs:domain :Versions ;
                            rdfs:range :CVE .
 
 
@@ -52,6 +53,14 @@
                    rdfs:domain :Vendor ;
                    rdfs:range :Product ;
                    rdfs:comment "Indicates which products are owned by the vendor" .
+
+
+###  http://purl.org/cyber/cve#has_product
+:has_product rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             owl:inverseOf :has_version_interval ;
+             rdfs:domain :Versions ;
+             rdfs:range :Product .
 
 
 ###  http://purl.org/cyber/cve#has_references

@@ -62,7 +62,7 @@ INSERT DATA {{
             if log_obj["action"] == "install" or log_obj["action"] == "trigproc":
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
-                        logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
+                        logs:package_name "{log_obj['package']}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
                         logs:installed True ;

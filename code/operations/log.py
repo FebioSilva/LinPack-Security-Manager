@@ -15,6 +15,9 @@ if __name__ == "__main__":
             ask_for_package_query = logAuxiliary.ask_for_package_to_sparql(log)
             pkg_exists = dbOperations.ask_for_package(ask_for_package_query)["boolean"]
             if pkg_exists and (log["action"] == "install" or log["action"] == "remove" or log["action"] == "upgrade" or log["action"] == "trigproc" or log["action"] == "purge"):
+                if log["package"] == "aspera-faspex":
+                    print(pkg_exists)
+                    input()
                 delete_package_query = logAuxiliary.delete_package_to_sparql(log)
                 dbOperations.delete_package(delete_package_query)
         log_in_sparql = logToRDF.dpkg_log_to_sparql(log)

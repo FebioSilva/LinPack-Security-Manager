@@ -116,66 +116,86 @@ ORDER BY DESC(?numCVEs)
 `
 
 const logsAndCVEs = `
+PREFIX cve:     <http://purl.org/cyber/cve#>
 PREFIX linpack: <http://www.semanticweb.org/linpack/>
-PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
-PREFIX cve:  <http://purl.org/cyber/cve#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
 SELECT DISTINCT
-  ?log
-  ?timestamp
-  ?type
-  ?package
-  ?package_name
-  ?package_version
-  ?installed
-  ?cve
-  ?description
-  ?base_score
-  ?base_severity
-  ?cvss_version
-  ?cvss_code
+       ?cve ?description ?cvss_version ?base_score ?base_severity ?cvss_code ?pub_date
+
+       ?product ?product_name
+       ?vendor  ?vendor_name
+
+       ?version_interval ?min ?max
+
+       ?reference ?ref_url ?ref_source ?ref_name
+
+       ?package  ?package_name ?package_version ?package_architecture ?installed
+       ?log      ?event_type   ?timestamp
 WHERE {
-  GRAPH <http://localhost:8890/linpack> {
-    ## Only ActionEvent and StateEvent with packages
-    ?log rdf:type ?type ;
-         logs:timestamp ?timestamp ;
-         logs:has_package ?package .
-    FILTER(?type IN (logs:StateEvent, logs:ActionEvent, logs:StartupEvent, logs:ConffileEvent))
+  #######################################################################
+  ##  CVE (todas as data-properties)                                  ##
+  #######################################################################
+  ?cve  a                     cve:CVE ;
+        cve:description       ?description ;
+        cve:cvss_version      ?cvss_version ;
+        cve:base_score        ?base_score ;
+        cve:base_severity     ?base_severity ;
+        cve:cvss_code         ?cvss_code ;
+        cve:pub_date          ?pub_date ;
 
-    ## Package details
-    ?package logs:package_name ?package_name ;
-             logs:version ?package_version ;
-             logs:installed ?installed ;
-             linpack:has_related_product ?product .
+        ## produtos explicitamente afectados
+        cve:has_affected_product ?product ;
+
+        ## referências explicitamente ligadas
+        cve:has_references ?reference .
+
+  #######################################################################
+  ##  Produto + Vendor                                                ##
+  #######################################################################
+  ?product  a                   cve:Product ;
+            cve:product_name    ?product_name ;
+            cve:has_vendor      ?vendor ;
+            cve:has_version_interval ?version_interval .
+
+  ?vendor   a                   cve:Vendor ;
+            cve:vendor_name     ?vendor_name .
+
+  #######################################################################
+  ##  Intervalo(s) de versão que apontam *a este CVE*                 ##
+  #######################################################################
+  ?version_interval  a                          cve:Versions ;
+                     cve:has_product            ?product ;
+                     cve:has_cve_affecting_product ?cve ;
+                     cve:min                    ?min ;
+                     cve:max                    ?max .
+
+  #######################################################################
+  ##  Referência(s) bibliográficas                                   ##
+  #######################################################################
+  ?reference  cve:url         ?ref_url ;
+              cve:ref_source  ?ref_source ;
+              cve:ref_name    ?ref_name .
+
+  #######################################################################
+  ##  Pacotes e eventos de log                                       ##
+  ##  (associação por nome ≈ produto)                               ##
+  #######################################################################
+  ?package a logs:Package ;
+           logs:package_name           ?package_name ;
+           logs:version                ?package_version ;
+           logs:package_architecture   ?package_architecture ;
+           logs:installed              ?installed .
+
+  FILTER( LCASE(STR(?package_name)) = LCASE(STR(?product_name)) )
+
+  ## eventos relacionados ao pacote
+  OPTIONAL {
+    ?log      logs:has_package            ?package ;
+              rdf:type                    ?event_type ;
+              logs:timestamp              ?timestamp .
   }
-
-  ## CVE part
-  ?cve a cve:CVE ;
-       cve:description ?description ;
-       cve:base_score ?base_score ;
-       cve:base_severity ?base_severity ;
-       cve:cvss_version ?cvss_version ;
-       cve:cvss_code ?cvss_code ;
-       cve:has_affected_product ?product .
-
-  ?product a cve:Product ;
-           cve:product_name ?package_name ;
-           cve:has_version_interval ?version_interval .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve ;
-                    cve:has_product ?product .
-
-  OPTIONAL { ?version_interval cve:min ?version_min . }
-  OPTIONAL { ?version_interval cve:max ?version_max . }
-
-  ## Version range filtering
-  FILTER (
-    (!BOUND(?version_min) || xsd:string(?package_version) >= xsd:string(?version_min)) &&
-    (!BOUND(?version_max) || xsd:string(?package_version) <= xsd:string(?version_max))
-  )
 }
 `
 

@@ -326,6 +326,10 @@ owl:topDataProperty rdfs:range xsd:int .
                             owl:someValuesFrom :CVE
                           ] ,
                           [ rdf:type owl:Restriction ;
+                            owl:onProperty :has_product ;
+                            owl:someValuesFrom :Product
+                          ] ,
+                          [ rdf:type owl:Restriction ;
                             owl:onProperty :max ;
                             owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                             owl:onDataRange xsd:string

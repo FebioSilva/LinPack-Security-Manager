@@ -41,7 +41,7 @@ async function loadAndRenderView(view, year = "all") {
 
   try {
     if (view === "graph") {
-      const queryCVEToUse = (year === "all") ? queryCVE : generateCVEQueryByYear(year);
+      const queryCVEToUse = (year === "all") ? logsAndCVEs : generateCVEQueryByYear(year);
       const [logData, cveData] = await Promise.all([
         fetchDataFromSPARQLEndPoint(queryLog, signal),
         fetchDataFromSPARQLEndPoint(queryCVEToUse, signal)

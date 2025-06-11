@@ -51,11 +51,10 @@ def process_version_interval(version, start_v, end_v, cve_id, prd_id):
     if version and version != "*":
         ver_id = f"cve:vers_{sanitize_for_blank_node(version)}"
         ver_block = f"""    {ver_id} a cve:Versions ;
-        cve:version "{escape_string_for_sparql(version)}" ;
-        cve:min "{escape_string_for_sparql(version)}" ;
-        cve:max "{escape_string_for_sparql(version)}" ;
+        cve:min "{version}" ;
+        cve:max "{version}" ;
         cve:has_cve_affecting_product cve:{cve_id} ;
-        cve:has_product cve:{prd_id} ."""
+        cve:has_product {prd_id} ."""
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
 
@@ -65,8 +64,9 @@ def process_version_interval(version, start_v, end_v, cve_id, prd_id):
         max_v = end_v if end_v else "*"
         ver_id = f"cve:vers_{normalise_part(min_v)}-{normalise_part(max_v)}"
         ver_block = f"""    {ver_id} a cve:Versions ;
-        cve:min "{escape_string_for_sparql(min_v)}" ;
-        cve:max "{escape_string_for_sparql(max_v)}" ;
+        cve:min "{min_v}" ;
+        cve:max "{max_v}" ;
+        cve:has_product {prd_id} ;
         cve:has_cve_affecting_product cve:{cve_id} ."""
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
@@ -74,6 +74,7 @@ def process_version_interval(version, start_v, end_v, cve_id, prd_id):
     # 3) todas as versões
     ver_id = "cve:vers_all"
     ver_block = f"""    {ver_id} a cve:Versions ;
+        cve:has_product {prd_id} ;
         cve:has_cve_affecting_product cve:{cve_id} ."""
     ver_blocks.append((ver_id, ver_block))
     return ver_blocks
@@ -109,9 +110,9 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     preds = [
         f'cve:description "{desc}"',
         f'cve:base_score {sev.get("baseScore", -1)}',
-        f'cve:base_severity "{escape_string_for_sparql(sev.get("baseSeverity", ""))}"',
-        f'cve:cvss_version "{escape_string_for_sparql(sev.get("cvssVersion", ""))}"',
-        f'cve:cvss_code "{escape_string_for_sparql(sev.get("cvssCode", ""))}"',
+        f'cve:base_severity "{sev.get("baseSeverity", "")}"',
+        f'cve:cvss_version "{sev.get("cvssVersion", "")}"',
+        f'cve:cvss_code "{sev.get("cvssCode", "")}"',
     ]
     if pub_dt:
         preds.append(f'cve:pub_date "{pub_dt}"^^xsd:dateTime')
@@ -161,7 +162,7 @@ INSERT DATA {{
         vendor = cpe.get("vendor", "unknown_vendor")
         product = cpe.get("product", "unknown_product")
         vnd_id = f"cve:vendor_{sanitize_for_blank_node(vendor)}"
-        prd_id = f"cve:prod_{sanitize_for_blank_node(vendor+'_'+product)}"
+        prd_id = f"cve:prod_{sanitize_for_blank_node(product)}"
 
         vers_intv = cpe.get("version_intervals", [])
         if not vers_intv:
@@ -194,7 +195,7 @@ INSERT DATA {{
         if vnd_id not in vendor_seen:
             vendor_seen.add(vnd_id)
             vendor_lines.append(f"""    {vnd_id} a cve:Vendor ;
-        cve:vendor_name "{escape_string_for_sparql(vendor)}" ;
+        cve:vendor_name "{vendor}" ;
         cve:has_owned_product {prd_id} .""")
 
     def batch_insert(lines, chunk=50):
@@ -232,7 +233,7 @@ if __name__ == "__main__":
         "cpe": [
             {
                 "vendor": "example_vendor",
-                "product": "example_product",
+                "product": "example-product",
                 "version_intervals": [
                     {"min": "1.0", "max": "2.0"}
                 ]

@@ -504,7 +504,7 @@ function mergeGraphs(graph1, graph2) {
     linkMap.set(key, { ...link });
   }
 
-  // Adiciona links do segundo grafo, evitando duplicatas (com tipo)
+  // Adiciona links do segundo grafo, evitando réplicas (com tipo)
   for (const link of graph2.links) {
     const key = `${link.source}->${link.target}->${link.type}`;
     if (!linkMap.has(key)) {

@@ -49,6 +49,7 @@ async function loadAndRenderView(view, year = "all") {
       const logGraph = processLogDataToGraph(logData);
       console.log("Log graph processed:", logGraph);
       const cveGraph = processCVEDataToGraph(cveData);
+      console.log("CVE graph processed:", cveGraph)
       const { nodes, links } = mergeGraphs(logGraph, cveGraph);
       renderGraph(nodes, links);
     } else if (view === "bubble") {

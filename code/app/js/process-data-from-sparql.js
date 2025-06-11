@@ -116,6 +116,7 @@ ORDER BY DESC(?numCVEs)
 `
 
 const logsAndCVEs = `
+PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
 PREFIX cve:  <http://purl.org/cyber/cve#>
 PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -146,7 +147,8 @@ WHERE {
     ## Package details
     ?package logs:package_name ?package_name ;
              logs:version ?package_version ;
-             logs:installed ?installed .
+             logs:installed ?installed ;
+             linpack:has_related_product ?product .
   }
 
   ## CVE part
@@ -163,7 +165,8 @@ WHERE {
            cve:has_version_interval ?version_interval .
 
   ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve .
+                    cve:has_cve_affecting_product ?cve ;
+                    cve:has_product ?product .
 
   OPTIONAL { ?version_interval cve:min ?version_min . }
   OPTIONAL { ?version_interval cve:max ?version_max . }

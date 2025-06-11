@@ -15,7 +15,9 @@ def generate_package_uri(package_name, *versions):
 
 def dpkg_log_to_sparql(log_obj, graph_uri="http://localhost:8890/linpack"):
     sparql_prefix = """
+PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
+PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
@@ -60,7 +62,8 @@ INSERT DATA {{
                         logs:package_name "{log_obj['package']}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
-                        logs:installed True .
+                        logs:installed True ;
+                        linpack:has_related_product cve:{sanitize_for_uri(log_obj['package'])}
             """
                 
             elif log_obj["action"] == "remove" or log_obj["action"] == "purge":

@@ -44,7 +44,7 @@ def normalise_part(v: str | None) -> str:
 # ─────────────────────────────
 
 
-def process_version_interval(version, start_v, end_v, cve_id):
+def process_version_interval(version, start_v, end_v, cve_id, prd_id):
     ver_blocks = []
 
     # 1) versão única ► cpe:2.3:a:foo:bar:1.2.3:*:*:*:*:*:*:*
@@ -54,7 +54,8 @@ def process_version_interval(version, start_v, end_v, cve_id):
         cve:version "{escape_string_for_sparql(version)}" ;
         cve:min "{escape_string_for_sparql(version)}" ;
         cve:max "{escape_string_for_sparql(version)}" ;
-        cve:has_cve_affecting_product cve:{cve_id} ."""
+        cve:has_cve_affecting_product cve:{cve_id} ;
+        cve:has_product cve:{prd_id} ."""
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
 
@@ -171,7 +172,7 @@ INSERT DATA {{
         for iv in vers_intv:
             ver_blocks.extend(
                 process_version_interval(
-                    iv.get("min"), iv.get("min"), iv.get("max"), cve_id)
+                    iv.get("min"), iv.get("min"), iv.get("max"), cve_id, prd_id)
             )
 
         for ver_id, ver_block in ver_blocks:

@@ -120,6 +120,7 @@ PREFIX cve:     <http://purl.org/cyber/cve#>
 PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
 PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
 
 SELECT DISTINCT
        ?cve ?description ?cvss_version ?base_score ?base_severity ?cvss_code ?pub_date
@@ -129,13 +130,11 @@ SELECT DISTINCT
 
        ?version_interval ?min ?max
 
-       ?reference ?ref_url ?ref_source ?ref_name
-
-       ?package  ?package_name ?package_version ?package_architecture ?installed
+       ?package  ?package_name ?package_version ?package_architecture
        ?log      ?event_type   ?timestamp
 WHERE {
   #######################################################################
-  ##  CVE (todas as data-properties)                                  ##
+  ## CVE                                                               ##
   #######################################################################
   ?cve  a                     cve:CVE ;
         cve:description       ?description ;
@@ -144,59 +143,48 @@ WHERE {
         cve:base_severity     ?base_severity ;
         cve:cvss_code         ?cvss_code ;
         cve:pub_date          ?pub_date ;
-
-        ## produtos explicitamente afectados
         cve:has_affected_product ?product ;
-
-        ## referências explicitamente ligadas
         cve:has_references ?reference .
 
   #######################################################################
-  ##  Produto + Vendor                                                ##
+  ## Produto + Vendor + versão afeta                                  ##
   #######################################################################
-  ?product  a                   cve:Product ;
-            cve:product_name    ?product_name ;
-            cve:has_vendor      ?vendor ;
-            cve:has_version_interval ?version_interval .
+  ?product a                  cve:Product ;
+           cve:product_name   ?product_name ;
+           cve:has_vendor     ?vendor .
 
-  ?vendor   a                   cve:Vendor ;
-            cve:vendor_name     ?vendor_name .
+  ?vendor  a                  cve:Vendor ;
+           cve:vendor_name    ?vendor_name .
 
-  #######################################################################
-  ##  Intervalo(s) de versão que apontam *a este CVE*                 ##
-  #######################################################################
-  ?version_interval  a                          cve:Versions ;
-                     cve:has_product            ?product ;
-                     cve:has_cve_affecting_product ?cve ;
-                     cve:min                    ?min ;
-                     cve:max                    ?max .
+  ?version_interval a cve:Versions ;
+                    cve:has_product ?product ;
+                    cve:has_cve_affecting_product ?cve .
+
+  OPTIONAL { ?version_interval cve:min ?min . }
+  OPTIONAL { ?version_interval cve:max ?max . }
 
   #######################################################################
-  ##  Referência(s) bibliográficas                                   ##
-  #######################################################################
-  ?reference  cve:url         ?ref_url ;
-              cve:ref_source  ?ref_source ;
-              cve:ref_name    ?ref_name .
-
-  #######################################################################
-  ##  Pacotes e eventos de log                                       ##
-  ##  (associação por nome ≈ produto)                               ##
+  ## Pacotes do sistema + ligação ao produto via nome                 ##
   #######################################################################
   ?package a logs:Package ;
-           logs:package_name           ?package_name ;
-           logs:version                ?package_version ;
-           logs:package_architecture   ?package_architecture ;
-           logs:installed              ?installed .
+           logs:package_name         ?package_name ;
+           logs:version              ?package_version ;
+           logs:package_architecture ?package_architecture ;
+           logs:installed            True .
 
+  ## Nome do pacote ≈ nome do produto
   FILTER( LCASE(STR(?package_name)) = LCASE(STR(?product_name)) )
 
-  ## eventos relacionados ao pacote
+  #######################################################################
+  ## Eventos de log relacionados (opcional)                           ##
+  #######################################################################
   OPTIONAL {
-    ?log      logs:has_package            ?package ;
-              rdf:type                    ?event_type ;
-              logs:timestamp              ?timestamp .
+    ?log logs:has_package ?package ;
+         rdf:type          ?event_type ;
+         logs:timestamp    ?timestamp .
   }
 }
+
 `
 
 const logsAndCVEsMyPkgs = `
@@ -411,11 +399,13 @@ function processCVEDataToGraph(bindings) {
   const nodesMap = new Map();
   const links = [];
   const productVersionsMap = new Map();
+  const cveProductLinks = new Set();  // para evitar duplicados
 
   bindings.forEach(entry => {
     const cveUri = entry.cve.value;
-    const cveId = extractLocalName(cveUri);
+    const cveId  = extractLocalName(cveUri);
 
+    // Nó CVE
     if (!nodesMap.has(cveId)) {
       nodesMap.set(cveId, {
         id: cveId,
@@ -429,10 +419,11 @@ function processCVEDataToGraph(bindings) {
       });
     }
 
+    // Produto
     const productName = entry.product_name?.value;
-    const vendorName = entry.vendor_name?.value;
-    const productUri = entry.product?.value;
-    const productId = `prod_${productName}`;
+    const vendorName  = entry.vendor_name?.value;
+    const productUri  = entry.product?.value;
+    const productId   = `prod_${productName}`;
 
     if (productName && !nodesMap.has(productId)) {
       nodesMap.set(productId, {
@@ -445,6 +436,7 @@ function processCVEDataToGraph(bindings) {
       productVersionsMap.set(productId, new Map());
     }
 
+    // Versão
     const versionUri = entry.version_interval?.value;
     if (versionUri) {
       const versionId = extractLocalName(versionUri);
@@ -454,30 +446,35 @@ function processCVEDataToGraph(bindings) {
           id: versionId,
           type: "Version",
           uri: versionUri,
-          min: entry.version_min?.value || null,
-          max: entry.version_max?.value || null,
+          min: entry.min?.value || null,
+          max: entry.max?.value || null,
         });
-
         productVersionsMap.get(productId).set(versionId, true);
-
         links.push({ source: productId, target: versionId, type: "has_version" });
       }
 
       links.push({ source: versionId, target: cveId, type: "affects" });
     }
 
-    // Aqui a alteração principal da ligação:
-    if (productName && cveId) {
+    // Ligação CVE → Product sem duplicados
+    const key = `${cveId}->${productId}`;
+    if (!cveProductLinks.has(key)) {
       links.push({ source: cveId, target: productId, type: "has_affected_product" });
+      cveProductLinks.add(key);
     }
   });
 
   console.log(`Total nós: ${nodesMap.size}, Total links: ${links.length}`);
-
   return {
     nodes: Array.from(nodesMap.values()),
     links
   };
+}
+
+const compare = require('dpkg-compare-versions');
+
+function processCVEAndLogDataToGraph(bindings) {
+
 }
 
 
@@ -569,4 +566,4 @@ function main() {
 }
 
 
-main();
+//main();

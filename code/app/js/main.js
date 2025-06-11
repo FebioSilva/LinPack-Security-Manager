@@ -42,15 +42,12 @@ async function loadAndRenderView(view, year = "all") {
   try {
     if (view === "graph") {
       const queryCVEToUse = (year === "all") ? logsAndCVEs : generateCVEQueryByYear(year);
-      const [logData, cveData] = await Promise.all([
-        fetchDataFromSPARQLEndPoint(queryLog, signal),
-        fetchDataFromSPARQLEndPoint(queryCVEToUse, signal)
-      ]);
-      const logGraph = processLogDataToGraph(logData);
-      console.log("Log graph processed:", logGraph);
+      const cveData = await fetchDataFromSPARQLEndPoint(queryCVEToUse, signal);
+      //const logGraph = processLogDataToGraph(logData);
+      //console.log("Log graph processed:", logGraph);
       const cveGraph = processCVEDataToGraph(cveData);
       console.log("CVE graph processed:", cveGraph)
-      const { nodes, links } = mergeGraphs(logGraph, cveGraph);
+      const { nodes, links } = cveGraph;
       renderGraph(nodes, links);
     } else if (view === "bubble") {
       const rawData = await fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery, signal);

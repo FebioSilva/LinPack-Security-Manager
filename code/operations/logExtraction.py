@@ -14,13 +14,13 @@ class LogParser:
 
                 # Match action logs (install, upgrade, remove)
                 action_match = re.match(
-                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<action>install|upgrade|remove|purge|configure|unpack|triggered|trigproc|trigawait) (?P<package>[\w\-\.\+]+)(?:\s*:\s*(?P<architecture>[\w\d\-]+) (?P<version_old>[\w\.\-\:]+)?(?: (?P<version_new>[\w\.\-\:]+|<none>))?)?",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<action>install|upgrade|remove|purge|configure|unpack|triggered|trigproc|trigawait) (?P<package>[\w\-\.\+]+)(?:\s*:\s*(?P<architecture>[\w\d\-]+) (?P<version_old><none>|[^\s]+)\s*(?P<version_new><none>|[^\s]+)?)",
                     line
                 )
 
                 # Match state logs
                 state_match = re.match(
-                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) status (?P<state>[\w-]+) (?P<package>[\w\-\.\+]+):(?P<architecture>[\w\d\-]+) (?P<version>[\w\.\-:]+)",
+                    r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) status (?P<state>[\w-]+) (?P<package>[\w\-\.\+]+):(?P<architecture>[\w\d\-]+) (?P<version>[\w\.\-\~:]+)",
                     line
                 )
 
@@ -38,16 +38,51 @@ class LogParser:
 
                 # Check and store matches
                 if action_match:
-                    self.parsed_logs.append({
-                        "log_id": self.log_id,
-                        "timestamp": action_match.group("timestamp").replace(" ", "T"),
-                        "type": "action",
-                        "action": action_match.group("action"),
-                        "package": action_match.group("package"),
-                        "architecture": action_match.group("architecture"),
-                        "version_old": action_match.group("version_old"),
-                        "version_new": action_match.group("version_new"),
-                    })
+                    action = action_match.group("action")
+                    if action == "install":
+                        self.parsed_logs.append({
+                            "log_id": self.log_id,
+                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "type": "action",
+                            "action": action_match.group("action"),
+                            "package": action_match.group("package"),
+                            "architecture": action_match.group("architecture"),
+                            "version": action_match.group("version_new")
+                        })
+
+                    elif action == "upgrade":
+                        self.parsed_logs.append({
+                            "log_id": self.log_id,
+                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "type": "action",
+                            "action": action_match.group("action"),
+                            "package": action_match.group("package"),
+                            "architecture": action_match.group("architecture"),
+                            "version": action_match.group("version_new"),
+                            "replace": action_match.group("version_old")
+                        })
+
+                    elif action == "remove" or action == "purge":
+                        self.parsed_logs.append({
+                            "log_id": self.log_id,
+                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "type": "action",
+                            "action": action_match.group("action"),
+                            "package": action_match.group("package"),
+                            "architecture": action_match.group("architecture"),
+                            "version": action_match.group("version_old")
+                        })
+
+                    else:
+                        self.parsed_logs.append({
+                            "log_id": self.log_id,
+                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "type": "action",
+                            "action": action_match.group("action"),
+                            "package": action_match.group("package"),
+                            "architecture": action_match.group("architecture"),
+                            "version": action_match.group("version_old")
+                        })
 
                 elif state_match:
                     self.parsed_logs.append({
@@ -110,16 +145,12 @@ class LogParser:
 
 # Exemplo de uso
 if __name__ == "__main__":
-    # Substitua pelo caminho real do seu arquivo de log
+    # Change it for the real path to the dpkg.log file
     input_file = "../resources/dpkg.log"
 
     parser = LogParser(input_file)
     parser.parse_log()
     parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
-    startup_logs = [log for log in parsed_logs if log["type"] == "action"]
-    print("Startup logs:")
-    for log in startup_logs:
-        print(log)
-        print("*****************************************")
     print("Parsed logs:")
-    # print(parsed_logs)  # Print parsed logs for debugging
+    installed_logs = [log for log in parsed_logs if log["type"] == "action" and log["action"] == "install"]
+    print(parsed_logs)  # Print parsed logs for debugging

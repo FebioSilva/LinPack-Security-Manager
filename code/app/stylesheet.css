@@ -74,3 +74,13 @@ svg {
   to { transform: rotate(360deg); }
 }
 
+#tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    pointer-events: none;
+    font-size: 12px;
+    display: none;
+}

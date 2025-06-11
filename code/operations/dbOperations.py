@@ -11,8 +11,19 @@ SPARQL_ENDPOINT = "http://localhost:8890/sparql"
 sparql = SPARQLWrapper(SPARQL_ENDPOINT)
 # sparql.setCredentials(USERNAME, PASSWORD)
 
+def ask_for_package(query):
+    sparql.setMethod(POST)
+    sparql.setReturnFormat(JSON)
+    sparql.setQuery(query)
+    result = sparql.query().convert()
+    return result
 
 def insert_into_graph(query):
+    sparql.setMethod(POST)
+    sparql.setQuery(query)
+    sparql.query()
+
+def delete_package(query):
     sparql.setMethod(POST)
     sparql.setQuery(query)
     sparql.query()

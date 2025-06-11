@@ -23,6 +23,13 @@
              rdfs:comment "Indicates which package is mentioned in a StateEvent or ActionEvent" .
 
 
+###  http://www.semanticweb.org/logs-ontology-v2/replaced_by
+:replaced_by rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             rdfs:domain :Package ;
+             rdfs:range :Package .
+
+
 #################################################################
 #    Data properties
 #################################################################
@@ -43,14 +50,6 @@
          rdfs:comment "Represents the command given in a StartUpEvent" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/current_version
-:current_version rdf:type owl:DatatypeProperty ;
-                 rdfs:subPropertyOf owl:topDataProperty ;
-                 rdfs:domain :Package ;
-                 rdfs:range xsd:string ;
-                 rdfs:comment "Represents the current version of a package" .
-
-
 ###  http://www.semanticweb.org/logs-ontology-v2/decision
 :decision rdf:type owl:DatatypeProperty ;
           rdfs:subPropertyOf owl:topDataProperty ;
@@ -67,12 +66,11 @@
           rdfs:comment "Represents the configuration file that will be either kept or discarded" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/new_version
-:new_version rdf:type owl:DatatypeProperty ;
-             rdfs:subPropertyOf owl:topDataProperty ;
-             rdfs:domain :Package ;
-             rdfs:range xsd:string ;
-             rdfs:comment "Represents the new version of a package after an event that install or update a package" .
+###  http://www.semanticweb.org/logs-ontology-v2/installed
+:installed rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain :Package ;
+           rdfs:range xsd:boolean .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/package_architecture
@@ -113,6 +111,14 @@
       rdfs:domain :StartupEvent ;
       rdfs:range xsd:string ;
       rdfs:comment "Represents the type given in a StartUpEvent" .
+
+
+###  http://www.semanticweb.org/logs-ontology-v2/version
+:version rdf:type owl:DatatypeProperty ;
+         rdfs:subPropertyOf owl:topDataProperty ;
+         rdfs:domain :Package ;
+         rdfs:range xsd:string ;
+         rdfs:comment "Represents the current version of a package" .
 
 
 #################################################################
@@ -169,6 +175,16 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/Package
 :Package rdf:type owl:Class ;
          rdfs:subClassOf [ rdf:type owl:Restriction ;
+                           owl:onProperty :replaced_by ;
+                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onClass :Package
+                         ] ,
+                         [ rdf:type owl:Restriction ;
+                           owl:onProperty :installed ;
+                           owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                           owl:onDataRange xsd:boolean
+                         ] ,
+                         [ rdf:type owl:Restriction ;
                            owl:onProperty :package_architecture ;
                            owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onDataRange xsd:string
@@ -179,12 +195,7 @@
                            owl:onDataRange xsd:string
                          ] ,
                          [ rdf:type owl:Restriction ;
-                           owl:onProperty :current_version ;
-                           owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
-                           owl:onDataRange xsd:string
-                         ] ,
-                         [ rdf:type owl:Restriction ;
-                           owl:onProperty :new_version ;
+                           owl:onProperty :version ;
                            owl:maxQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                            owl:onDataRange xsd:string
                          ] ;

@@ -12,7 +12,6 @@
   <link rel="stylesheet" href="./stylesheet.css" />
   <style>
     body { margin: 0; font-family: sans-serif}
-    svg { width: 100vw; height: 100vh; }
     .node circle { stroke: #fff; stroke-width: 1.5px; }
     .node text { pointer-events: none; font-size: 12px; }
     line { stroke: #999; stroke-opacity: 0.6; }
@@ -27,16 +26,7 @@
   </style>
 </head>
 <body>
-  <div id="tooltip" style="
-    position: absolute;
-    background: rgba(0,0,0,0.8);
-    color: white;
-    padding: 8px;
-    border-radius: 6px;
-    pointer-events: none;
-    font-size: 12px;
-    display: none;
-  "></div>
+  <div id="tooltip"></div>
   <div id="controls" style="position: fixed; top: 10px; left: 10px; background: #eee; padding: 8px; border-radius: 6px; z-index: 10; display: flex; gap: 10px; align-items: center;">
     <label for="viewSelect">View: </label>
     <select id="viewSelect">
@@ -61,7 +51,7 @@
   <div id="loading-spinner">
     Loading data, please wait...
   </div>
-
+  
   <svg></svg>
   <div id="stats-view"></div>
 

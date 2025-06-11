@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import nvdExtraction
 import dbOperations
 import nvdToRDF
 
 if __name__ == "__main__":
     start_date = datetime(2020, 1, 1)
+    #start_date = datetime.now() - timedelta(days=119)
     end_date = datetime.now()
 
     cves = nvdExtraction.fetch_cves_for_package(start_date, end_date)

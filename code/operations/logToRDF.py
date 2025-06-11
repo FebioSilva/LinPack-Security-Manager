@@ -30,16 +30,12 @@ INSERT DATA {{
                     logs:timestamp "{log_obj['timestamp']}"^^xsd:dateTime ;
 """
     if log_obj["type"] == "action":
-        version_old = 'none' if log_obj["version_old"] == '<none>' else log_obj["version_old"]
-        version_new = 'none' if log_obj["version_new"] == '<none>' else log_obj["version_new"]
-        package_uri = generate_package_uri(
-            log_obj['package'], version_old, version_new)
+        package_uri = generate_package_uri(log_obj['package'], log_obj['version'])
         sparql += f"""                    logs:action "{log_obj['action']}" ;
                     logs:has_package logs:{package_uri} ;  
 """
     elif log_obj["type"] == "state":
-        package_uri = generate_package_uri(
-            log_obj['package'], log_obj['version'])
+        package_uri = generate_package_uri(log_obj['package'], log_obj['version'])
         sparql += f"""                    logs:state "{log_obj['state']}" ;
                     logs:has_package logs:{package_uri} ;  
 """
@@ -56,27 +52,43 @@ INSERT DATA {{
 
     if 'package' in log_obj:
         if log_obj["type"] == "action":
-            version_old = 'none' if log_obj["version_old"] == '<none>' else log_obj["version_old"]
-            version_new = 'none' if log_obj["version_new"] == '<none>' else log_obj["version_new"]
-            package_uri = generate_package_uri(
-                log_obj['package'], version_old, version_new)
-            sparql += f"""
-    logs:{package_uri} rdf:type logs:Package ;
-                    logs:package_name "{log_obj['package']}" ;
-                    logs:package_architecture "{log_obj['architecture']}" ;
-                    logs:current_version "{log_obj['version_old']}" ;
-                    logs:new_version "{log_obj['version_new']}" .
-        """
-        elif log_obj["type"] == "state":
-            package_uri = generate_package_uri(
-                log_obj['package'], log_obj['version'])
-            sparql += f"""     
-    logs:{package_uri} rdf:type logs:Package ;
-                    logs:package_name "{log_obj['package']}" ;
-                    logs:package_architecture "{log_obj['architecture']}" ;
-                    logs:current_version "{log_obj['version']}" ;
-                    logs:new_version "{log_obj['version']}" .
-        """
+            package_uri = generate_package_uri(log_obj['package'], log_obj['version'])
+            
+            if log_obj["action"] == "install" or log_obj["action"] == "trigproc":
+                sparql += f"""
+        logs:{package_uri} rdf:type logs:Package ;
+                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_architecture "{log_obj['architecture']}" ;
+                        logs:version "{log_obj['version']}" ;
+                        logs:installed True .
+            """
+                
+            elif log_obj["action"] == "remove" or log_obj["action"] == "purge":
+                sparql += f"""
+        logs:{package_uri} rdf:type logs:Package ;
+                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_architecture "{log_obj['architecture']}" ;
+                        logs:version "{log_obj['version']}" ;
+                        logs:installed False .
+            """
+                
+            elif log_obj["action"] == "upgrade":
+                old_package_uri = generate_package_uri(log_obj['package'], log_obj['replace'])
+                sparql += f"""
+        logs:{old_package_uri} rdf:type logs:Package ;
+                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_architecture "{log_obj['architecture']}" ;
+                        logs:version "{log_obj['replace']}" ;
+                        logs:installed False ;
+                        logs:replaced_by logs:{package_uri} .
+            """ 
+                sparql += f"""
+        logs:{package_uri} rdf:type logs:Package ;
+                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_architecture "{log_obj['architecture']}" ;
+                        logs:version "{log_obj['version']}" ;
+                        logs:installed True .
+            """
 
     sparql += """
   }

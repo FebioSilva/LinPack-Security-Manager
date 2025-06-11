@@ -62,7 +62,7 @@ INSERT DATA {{
             if log_obj["action"] == "install" or log_obj["action"] == "trigproc":
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
-                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
                         logs:installed True ;
@@ -72,7 +72,7 @@ INSERT DATA {{
             elif log_obj["action"] == "remove" or log_obj["action"] == "purge":
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
-                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
                         logs:installed False .
@@ -83,7 +83,7 @@ INSERT DATA {{
                     log_obj['package'], log_obj['replace'])
                 sparql += f"""
         logs:{old_package_uri} rdf:type logs:Package ;
-                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['replace']}" ;
                         logs:installed False ;
@@ -91,7 +91,7 @@ INSERT DATA {{
             """
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
-                        logs:package_name "{log_obj['package']}" ;
+                        logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
                         logs:installed True .

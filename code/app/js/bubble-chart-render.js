@@ -1,4 +1,4 @@
-function renderBubbleChart(data) {
+export function renderBubbleChart(data) {
   document.getElementById("stats-view").innerHTML = ""; // Clear stats
   const svg = d3.select("svg");
   const width = window.innerWidth;

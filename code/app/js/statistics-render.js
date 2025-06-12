@@ -1,4 +1,4 @@
-function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
+export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
   const container = document.getElementById("stats-view");
   container.innerHTML = ""; // Clear stats
 

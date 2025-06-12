@@ -58,8 +58,7 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                 "pubEndDate": current_end.strftime("%Y-%m-%dT%H:%M:%S.999"),
             }
 
-            resp = requests.get(url, headers=headers,
-                                params=params, timeout=60)
+            resp = requests.get(url, headers=headers, params=params, timeout=60)
             resp.raise_for_status()
             data = resp.json()
 
@@ -73,12 +72,9 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                     for node in cfg.get("nodes", []):
                         for match in node.get("cpeMatch", []):
                             parts = match["criteria"].split(":")
-                            vendor = parts[3] if len(
-                                parts) > 3 else "unknown_vendor"
-                            product = parts[4] if len(
-                                parts) > 4 else "unknown_product"
-                            version = parts[5] if len(
-                                parts) > 5 else "unknown_version"
+                            vendor = parts[3] if len(parts) > 3 else "unknown_vendor"
+                            product = parts[4] if len(parts) > 4 else "unknown_product"
+                            version = parts[5] if len(parts) > 5 else None
                             target_hw = parts[11] if len(parts) > 11 else ""
 
                             start_incl = match.get("versionStartIncluding")
@@ -88,63 +84,38 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
 
                             versions_intervals = []
 
-                            # Se versão é '*', tenta extrair intervalos reais
-                            if version == "*":
-                                # Prioriza versionStartIncluding / versionEndIncluding, depois os exclusivos
-                                min_v = start_incl or start_excl or None
-                                max_v = end_incl or end_excl or None
+                            min_v = start_incl or start_excl
+                            max_v = end_incl or end_excl
 
-                                if min_v or max_v:
-                                    versions_intervals.append({
-                                        "min": min_v,
-                                        "max": max_v,
-                                        "label": None,
-                                    })
-                                else:
-                                    # Se não tem intervalos, marcar como all versions
-                                    versions_intervals.append({
-                                        "min": None,
-                                        "max": None,
-                                        "label": "versions_all",
-                                    })
+                            # Corrige para não deixar max_v terminar em '.1' se fizer sentido
+                            if max_v and max_v.endswith(".1"):
+                                max_v = max_v.rsplit(".", 1)[0]
 
-                            elif version in ("-", "", None):
-                                # Sem versão — não cria nenhum intervalo
-                                pass
-                            else:
-                                # Se existe intervalo explícito, cria-o
-                                if start_incl or start_excl or end_incl or end_excl:
-                                    min_v = start_incl or start_excl
-                                    max_v = end_incl or end_excl
-                                    versions_intervals.append({
-                                        "min": min_v,
-                                        "max": max_v,
-                                        "label": None,
-                                    })
-                                else:
-                                    # Versão única (min e max iguais ao version)
-                                    versions_intervals.append({
-                                        "min": version,
-                                        "max": version,
-                                        "label": None,
-                                    })
-
-                            # Caso nenhum intervalo criado, cria entrada sem versão
-                            if not versions_intervals:
-                                cpe_list.append({
-                                    "vendor": vendor,
-                                    "product": product,
-                                    "version_intervals": [],  # nenhum intervalo
-                                    "target_hw": target_hw,
+                            if min_v or max_v:
+                                versions_intervals.append({
+                                    "min": min_v,
+                                    "max": max_v,
+                                    "label": None,
+                                })
+                            elif version and version not in ("*", "-", "", None):
+                                versions_intervals.append({
+                                    "min": version,
+                                    "max": version,
+                                    "label": None,
                                 })
                             else:
-                                for interval in versions_intervals:
-                                    cpe_list.append({
-                                        "vendor": vendor,
-                                        "product": product,
-                                        "version_intervals": [interval],
-                                        "target_hw": target_hw,
-                                    })
+                                versions_intervals.append({
+                                    "min": None,
+                                    "max": None,
+                                    "label": "versions_all",
+                                })
+
+                            cpe_list.append({
+                                "vendor": vendor,
+                                "product": product,
+                                "version_intervals": versions_intervals,
+                                "target_hw": target_hw,
+                            })
 
                 # Filtra só CVEs que tocam targets Linux
                 if not any(is_linux_cpe(cpe) for cpe in cpe_list):
@@ -152,14 +123,26 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
 
                 # ─── description ───────────────────────────────────────────
                 descs = cve_data.get("descriptions", [])
-                description = descs[0]["value"] if descs else ""
+                description = next((d["value"] for d in descs if d.get("lang") == "en"), "")
 
                 # ─── severity / CVSS ───────────────────────────────────────
                 cvss_data = {}
+                # Preferir cvssMetricV31 do NVD se existir
                 for k, lst in cve_data.get("metrics", {}).items():
-                    if k.startswith("cvssMetric") and lst:
-                        cvss_data = lst[0].get("cvssData", {})
-                        break
+                    if k.startswith("cvssMetricV31") and lst:
+                        for entry in lst:
+                            if entry.get("source") == "nvd@nist.gov":
+                                cvss_data = entry.get("cvssData", {})
+                                break
+                        if cvss_data:
+                            break
+                else:
+                    # fallback: pega o primeiro cvssMetric disponível
+                    for k, lst in cve_data.get("metrics", {}).items():
+                        if k.startswith("cvssMetric") and lst:
+                            cvss_data = lst[0].get("cvssData", {})
+                            break
+
                 severity = {
                     "cvssVersion": cvss_data.get("version"),
                     "baseScore": cvss_data.get("baseScore"),
@@ -185,6 +168,8 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
         current_start = current_end + timedelta(seconds=1)
 
     return cve_objects
+
+
 
 
 # ──────────────────────────────────

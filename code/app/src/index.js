@@ -1,3 +1,10 @@
+import { renderBubbleChart } from '../js/bubble-chart-render.js';
+import { renderGraph } from '../js/graph-render.js';
+import { renderStatistics } from '../js/statistics-render.js';
+import { processTopCVEsData,fetchDataFromSPARQLEndPoint, logsAndCVEs, generateCVEQueryByYear, processCVEAndLogDataToGraph, highestSeverityCVEsQuery, countCVEsPerProductQuery,
+  processCountData
+} from '../js/process-data-from-sparql.js';
+
 // Declara abortController UMA vez no topo do arquivo
 let abortController = null;
 
@@ -45,7 +52,7 @@ async function loadAndRenderView(view, year = "all") {
       const cveData = await fetchDataFromSPARQLEndPoint(queryCVEToUse, signal);
       //const logGraph = processLogDataToGraph(logData);
       //console.log("Log graph processed:", logGraph);
-      const cveGraph = processCVEDataToGraph(cveData);
+      const cveGraph = processCVEAndLogDataToGraph(cveData);
       console.log("CVE graph processed:", cveGraph)
       const { nodes, links } = cveGraph;
       renderGraph(nodes, links);

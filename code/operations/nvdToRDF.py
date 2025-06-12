@@ -25,19 +25,9 @@ def normalize_part(v: str | None) -> str:
     return sanitize_for_blank_node(v)
 
 
-def process_version_interval(version, start_v, end_v, cve_id, prd_id):
+def process_version_interval(start_v, end_v, cve_id, prd_id):
     """Generate SPARQL triples for version intervals."""
     ver_blocks = []
-
-    if version and version != "*":
-        ver_id = f"cve:vers_{sanitize_for_blank_node(version)}"
-        ver_block = f"""    {ver_id} a cve:Versions ;
-        cve:min "{escape_string_for_sparql(version)}" ;
-        cve:max "{escape_string_for_sparql(version)}" ;
-        cve:has_cve_affecting_product cve:{cve_id} ;
-        cve:has_product {prd_id} ."""
-        ver_blocks.append((ver_id, ver_block))
-        return ver_blocks
 
     if start_v or end_v:
         min_v = start_v if start_v else "*"
@@ -51,13 +41,15 @@ def process_version_interval(version, start_v, end_v, cve_id, prd_id):
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
 
-    # All versions
+    # Caso todos os versions (sem limites)
     ver_id = "cve:vers_all"
     ver_block = f"""    {ver_id} a cve:Versions ;
         cve:has_product {prd_id} ;
         cve:has_cve_affecting_product cve:{cve_id} ."""
     ver_blocks.append((ver_id, ver_block))
     return ver_blocks
+
+
 
 
 def cve_object_to_sparql(cve_obj, graph_uri="http://localhost:8890/linpack"):
@@ -146,9 +138,9 @@ INSERT DATA {{
         ver_blocks = []
         for iv in vers_intv:
             ver_blocks.extend(
-                process_version_interval(iv.get("min"), iv.get(
-                    "min"), iv.get("max"), cve_id, prd_id)
+                process_version_interval(iv.get("min"), iv.get("max"), cve_id, prd_id)
             )
+
 
         for ver_id, ver_block in ver_blocks:
             if ver_id not in version_seen:

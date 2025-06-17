@@ -158,68 +158,6 @@ WHERE {
 }
 `
 
-export const logsAndCVEsMyPkgs = `
-PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
-PREFIX cve:  <http://purl.org/cyber/cve#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
-
-SELECT DISTINCT
-  ?log
-  ?timestamp
-  ?type
-  ?package
-  ?package_name
-  ?package_version
-  ?installed
-  ?cve
-  ?description
-  ?base_score
-  ?base_severity
-  ?cvss_version
-  ?cvss_code
-WHERE {
-  GRAPH <http://localhost:8890/linpack> {
-    ## Only ActionEvent and StateEvent with packages
-    ?log rdf:type ?type ;
-         logs:timestamp ?timestamp ;
-         logs:has_package ?package .
-    FILTER(?type IN (logs:StateEvent, logs:ActionEvent))
-
-    ## Package details, installed = true
-    ?package logs:package_name ?package_name ;
-             logs:version ?package_version ;
-             logs:installed true .
-    BIND(true AS ?installed)
-  }
-
-  ## CVE part
-  ?cve a cve:CVE ;
-       cve:description ?description ;
-       cve:base_score ?base_score ;
-       cve:base_severity ?base_severity ;
-       cve:cvss_version ?cvss_version ;
-       cve:cvss_code ?cvss_code ;
-       cve:has_affected_product ?product .
-
-  ?product a cve:Product ;
-           cve:product_name ?package_name ;
-           cve:has_version_interval ?version_interval .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve .
-
-  OPTIONAL { ?version_interval cve:min ?version_min . }
-  OPTIONAL { ?version_interval cve:max ?version_max . }
-
-  ## Version range filtering (string comparison)
-  FILTER (
-    (!BOUND(?version_min) || xsd:string(?package_version) >= xsd:string(?version_min)) &&
-    (!BOUND(?version_max) || xsd:string(?package_version) <= xsd:string(?version_max))
-  )
-}
-`
-
 export function generateCVEQueryByYear(year) {
   if (year === "all") {
     return logsAndCVEs;
@@ -228,8 +166,6 @@ export function generateCVEQueryByYear(year) {
     return logsAndCVEs(year);
   }
 }
-
-
 
 /**
   * Fetch data from SPARQL endpoint

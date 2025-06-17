@@ -54,38 +54,6 @@ WHERE {
 ORDER BY ?timestamp
 `
 
-export const queryCVE=`PREFIX cve: <http://purl.org/cyber/cve#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-SELECT DISTINCT
-  ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
-  ?product ?product_name
-  ?vendor ?vendor_name
-  ?version_interval ?version_min ?version_max
-WHERE {
-  ?cve a cve:CVE ;
-       cve:description ?description ;
-       cve:base_score ?base_score ;
-       cve:base_severity ?base_severity ;
-       cve:cvss_version ?cvss_version ;
-       cve:cvss_code ?cvss_code ;
-       cve:has_affected_product ?product .
-
-  ?product a cve:Product ;
-           cve:product_name ?product_name ;
-           cve:has_vendor ?vendor ;
-           cve:has_version_interval ?version_interval .
-  
-
-  ?vendor a cve:Vendor ;
-          cve:vendor_name ?vendor_name .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve .
-
-  OPTIONAL { ?version_interval cve:min ?version_min . }
-  OPTIONAL { ?version_interval cve:max ?version_max . }
-}`
 
 export const highestSeverityCVEsQuery = `
 PREFIX cve: <http://purl.org/cyber/cve#>
@@ -117,7 +85,7 @@ GROUP BY ?product ?productName
 ORDER BY DESC(?numCVEs)
 `
 
-export const logsAndCVEs = `
+export const logsAndCVEs = (year) => `
 PREFIX cve:     <http://purl.org/cyber/cve#>
 PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
@@ -147,6 +115,8 @@ WHERE {
         cve:pub_date          ?pub_date ;
         cve:has_affected_product ?product ;
         cve:has_references ?reference .
+
+  ${year ? `FILTER(STRSTARTS(STR(?pub_date), "${year}"))` : ""}
 
   #######################################################################
   ## Produto + Vendor + versão afeta                                  ##
@@ -186,7 +156,6 @@ WHERE {
          logs:timestamp    ?timestamp .
   }
 }
-
 `
 
 export const logsAndCVEsMyPkgs = `
@@ -253,37 +222,11 @@ WHERE {
 
 export function generateCVEQueryByYear(year) {
   if (year === "all") {
-    return queryCVE;
+    return logsAndCVEs;
   }
-  return `
-    PREFIX cve: <http://purl.org/cyber/cve#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-    SELECT ?cve ?pub_date ?description ?base_score ?base_severity ?cvss_version ?cvss_code
-           ?product ?product_name
-           ?vendor ?vendor_name
-    FROM <http://localhost:8890/linpack>
-    WHERE {
-      ?cve a cve:CVE ;
-           cve:description ?description ;
-           cve:base_score ?base_score ;
-           cve:base_severity ?base_severity ;
-           cve:cvss_version ?cvss_version ;
-           cve:cvss_code ?cvss_code ;
-           cve:pub_date ?pub_date ;
-           cve:has_affected_product ?product .
-
-      ?product a cve:Product ;
-               cve:product_name ?product_name ;
-               cve:has_vendor ?vendor ;
-               cve:has_cve ?cve .
-
-      ?vendor a cve:Vendor ;
-              cve:vendor_name ?vendor_name .
-
-      FILTER (STRSTARTS(STR(?pub_date), "${year}"))
-    }
-  `;
+  else if (year && year.length === 4) {
+    return logsAndCVEs(year);
+  }
 }
 
 
@@ -311,6 +254,23 @@ export async function fetchDataFromSPARQLEndPoint(query, signal) {
 
   const data = await response.json();
   return data.results.bindings;
+}
+
+export async function fetchAllDataWithPagination(baseQuery, signal, limit = 10000) {
+  let offset = 0;
+  let allResults = [];
+  let hasMore = true;
+
+  while (hasMore) {
+    const pagedQuery = `${baseQuery} LIMIT ${limit} OFFSET ${offset}`;
+    const pageResults = await fetchDataFromSPARQLEndPoint(pagedQuery, signal);
+
+    allResults = allResults.concat(pageResults);
+    hasMore = pageResults.length === limit;
+    offset += limit;
+  }
+  console.log(`Total results fetched: ${allResults.length}`);
+  return allResults;
 }
 
 
@@ -484,11 +444,9 @@ function versionInRange(version, min, max) {
   if (!version || !isValidVersion(version)) return false;
 
   if (min && !isValidVersion(min)) {
-    console.warn("Min version invalid:", min);
     min = null;
   }
   if (max && !isValidVersion(max)) {
-    console.warn("Max version invalid:", max);
     max = null;
   }
 
@@ -755,7 +713,7 @@ export function mergeGraphs(graph1, graph2) {
 
 // Main function
 function main() {
-  fetchDataFromSPARQLEndPoint(queryCVE)
+  fetchDataFromSPARQLEndPoint(logsAndCVEs)
     .then(data => {
       console.log("Fetched data:", data);
       const graph = processCVEDataToGraph(data)

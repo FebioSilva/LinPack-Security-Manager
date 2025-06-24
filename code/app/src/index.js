@@ -23,7 +23,7 @@ function updateControlsVisibility(view) {
 }
 
 // Função principal de carregar e renderizar a vista
-async function loadAndRenderView(view, year = "all") {
+async function loadAndRenderView(view, year) {
   if (abortController) {
     abortController.abort(); // cancela fetch anterior
   }
@@ -48,7 +48,7 @@ async function loadAndRenderView(view, year = "all") {
 
   try {
     if (view === "graph") {
-      const queryCVEToUse = (year === "all") ? logsAndCVEs : generateCVEQueryByYear(year);
+      const queryCVEToUse = generateCVEQueryByYear(year);
       const cveData = await fetchAllDataWithPagination(queryCVEToUse, signal);
       //const logGraph = processLogDataToGraph(logData);
       //console.log("Log graph processed:", logGraph);
@@ -105,7 +105,7 @@ async function main() {
 
     // Inicialização
     updateControlsVisibility(viewSelect.value);
-    loadAndRenderView(viewSelect.value, "all");
+    loadAndRenderView(viewSelect.value, yearSelect.value);
   });
 }
 

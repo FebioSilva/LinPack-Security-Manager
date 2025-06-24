@@ -159,13 +159,16 @@ WHERE {
 `
 
 export function generateCVEQueryByYear(year) {
+  console.log("Generating CVE query for year:", year);
   if (year === "all") {
-    return logsAndCVEs;
-  }
-  else if (year && year.length === 4) {
+    return logsAndCVEs(); 
+  } else if (year && year.length === 4) {
     return logsAndCVEs(year);
+  } else {
+    throw new Error("Invalid year value");
   }
 }
+
 
 /**
   * Fetch data from SPARQL endpoint

@@ -25,14 +25,14 @@ def normalize_part(v: str | None) -> str:
     return sanitize_for_blank_node(v)
 
 
-def process_version_interval(start_v, end_v, cve_id, prd_id):
+def process_version_interval(start_v, end_v, cve_id, prd_id, prd_name):
     """Generate SPARQL triples for version intervals."""
     ver_blocks = []
 
     if start_v or end_v:
         min_v = start_v if start_v else "*"
         max_v = end_v if end_v else "*"
-        ver_id = f"cve:vers_{normalize_part(min_v)}-{normalize_part(max_v)}"
+        ver_id = f"cve:{sanitize_for_blank_node(prd_name)}_vers_{normalize_part(min_v)}-{normalize_part(max_v)}"
         ver_block = f"""    {ver_id} a cve:Versions ;
         cve:min "{escape_string_for_sparql(min_v)}" ;
         cve:max "{escape_string_for_sparql(max_v)}" ;
@@ -42,7 +42,7 @@ def process_version_interval(start_v, end_v, cve_id, prd_id):
         return ver_blocks
 
     # Caso todos os versions (sem limites)
-    ver_id = "cve:vers_all"
+    ver_id = f"cve:{sanitize_for_blank_node(prd_name)}_vers_all"
     ver_block = f"""    {ver_id} a cve:Versions ;
         cve:has_product {prd_id} ;
         cve:has_cve_affecting_product cve:{cve_id} ."""
@@ -138,7 +138,7 @@ INSERT DATA {{
         ver_blocks = []
         for iv in vers_intv:
             ver_blocks.extend(
-                process_version_interval(iv.get("min"), iv.get("max"), cve_id, prd_id)
+                process_version_interval(iv.get("min"), iv.get("max"), cve_id, prd_id, product)
             )
 
 

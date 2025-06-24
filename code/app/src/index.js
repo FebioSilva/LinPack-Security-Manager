@@ -74,7 +74,9 @@ async function loadAndRenderView(view, year) {
       console.error("Erro ao carregar dados para view:", view, err);
     }
   } finally {
-    showSpinner(false);
+    if (!signal.aborted) {
+      showSpinner(false);
+    }
   }
 }
 

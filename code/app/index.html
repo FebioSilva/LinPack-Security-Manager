@@ -4,11 +4,6 @@
   <meta charset="UTF-8" />
   <title>LinPack System</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="./js/ui-interactions.js"></script> 
-  <script src="./js/graph-render.js"></script>
-  <script src="./js/process-data-from-sparql.js"></script>
-  <script src="./js/bubble-chart-render.js"></script>
-  <script src="./js/statistics-render.js"></script>
   <link rel="stylesheet" href="./stylesheet.css" />
   <style>
     body { margin: 0; font-family: sans-serif}
@@ -38,13 +33,12 @@
     <div id="yearFilter" style="display: flex; align-items: center; gap: 6px; margin-left: 20px;">
       <label for="yearSelect">Year: </label>
       <select id="yearSelect">
-        <option value="all" selected>All</option>
-        <option value="2020">2020</option>
-        <option value="2021">2021</option>
-        <option value="2022">2022</option>
-        <option value="2023">2023</option>
+        <option value="2025" selected>2025</option>
         <option value="2024">2024</option>
-        <option value="2025">2025</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="all">All</option>
       </select>
     </div>
   </div>
@@ -55,6 +49,6 @@
   <svg></svg>
   <div id="stats-view"></div>
 
-  <script src="./js/main.js"></script>
+  <script src="dist/bundle.js"></script>
 </body>
 </html>

@@ -1,3 +1,10 @@
+import { renderBubbleChart } from '../js/bubble-chart-render.js';
+import { renderGraph } from '../js/graph-render.js';
+import { renderStatistics } from '../js/statistics-render.js';
+import { processTopCVEsData,fetchDataFromSPARQLEndPoint, logsAndCVEs, generateCVEQueryByYear, processCVEAndLogDataToGraph, highestSeverityCVEsQuery, countCVEsPerProductQuery,
+  processCountData, fetchAllDataWithPagination
+} from '../js/process-data-from-sparql.js';
+
 // Declara abortController UMA vez no topo do arquivo
 let abortController = null;
 
@@ -16,7 +23,7 @@ function updateControlsVisibility(view) {
 }
 
 // Função principal de carregar e renderizar a vista
-async function loadAndRenderView(view, year = "all") {
+async function loadAndRenderView(view, year) {
   if (abortController) {
     abortController.abort(); // cancela fetch anterior
   }
@@ -41,16 +48,13 @@ async function loadAndRenderView(view, year = "all") {
 
   try {
     if (view === "graph") {
-      const queryCVEToUse = (year === "all") ? queryCVE : generateCVEQueryByYear(year);
-      const [logData, cveData] = await Promise.all([
-        fetchDataFromSPARQLEndPoint(queryLog, signal),
-        fetchDataFromSPARQLEndPoint(queryCVEToUse, signal)
-      ]);
-      const logGraph = processLogDataToGraph(logData);
-      console.log("Log graph processed:", logGraph);
-      const cveGraph = processCVEDataToGraph(cveData);
+      const queryCVEToUse = generateCVEQueryByYear(year);
+      const cveData = await fetchAllDataWithPagination(queryCVEToUse, signal);
+      //const logGraph = processLogDataToGraph(logData);
+      //console.log("Log graph processed:", logGraph);
+      const cveGraph = processCVEAndLogDataToGraph(cveData);
       console.log("CVE graph processed:", cveGraph)
-      const { nodes, links } = mergeGraphs(logGraph, cveGraph);
+      const { nodes, links } = cveGraph;
       renderGraph(nodes, links);
     } else if (view === "bubble") {
       const rawData = await fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery, signal);
@@ -70,7 +74,9 @@ async function loadAndRenderView(view, year = "all") {
       console.error("Erro ao carregar dados para view:", view, err);
     }
   } finally {
-    showSpinner(false);
+    if (!signal.aborted) {
+      showSpinner(false);
+    }
   }
 }
 
@@ -101,7 +107,7 @@ async function main() {
 
     // Inicialização
     updateControlsVisibility(viewSelect.value);
-    loadAndRenderView(viewSelect.value, "all");
+    loadAndRenderView(viewSelect.value, yearSelect.value);
   });
 }
 

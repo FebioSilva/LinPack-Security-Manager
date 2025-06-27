@@ -142,10 +142,8 @@ WHERE {
            logs:package_name         ?package_name ;
            logs:version              ?package_version ;
            logs:package_architecture ?package_architecture ;
-           logs:installed            True .
-
-  ## Nome do pacote ≈ nome do produto
-  FILTER( LCASE(STR(?package_name)) = LCASE(STR(?product_name)) )
+           logs:installed            True ;
+           linpack:has_related_product ?product .
 
   #######################################################################
   ## Eventos de log relacionados (opcional)                           ##
@@ -376,18 +374,14 @@ export function processCVEDataToGraph(bindings) {
 
 
 function isValidVersion(v) {
-  return typeof v === "string" && /^\d/.test(v) && !/[^0-9a-zA-Z.-]/.test(v);
+  return typeof v === "string" && /^\d/.test(v);
 }
 
-function versionInRange(version, min, max) {
+export function versionInRange(version, min, max) {
   if (!version || !isValidVersion(version)) return false;
 
-  if (min && !isValidVersion(min)) {
-    min = null;
-  }
-  if (max && !isValidVersion(max)) {
-    max = null;
-  }
+  if (min === '*' || !min) min = null;
+  if (max === '*' || !max) max = null;
 
   if (min && compareVersions(version, min) < 0) {
     return false;

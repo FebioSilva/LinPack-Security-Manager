@@ -56,10 +56,6 @@ async function loadAndRenderView(view, year) {
       console.log("CVE graph processed:", cveGraph)
       const { nodes, links } = cveGraph;
       renderGraph(nodes, links);
-    } else if (view === "bubble") {
-      const rawData = await fetchDataFromSPARQLEndPoint(countCVEsPerProductQuery, signal);
-      const processedData = processCountData(rawData);
-      renderBubbleChart(processedData);
     } else if (view === "stats") {
       const rawTopCVEs = await fetchDataFromSPARQLEndPoint(highestSeverityCVEsQuery, signal);
       const processedTopCVEs = processTopCVEsData(rawTopCVEs);

@@ -23,7 +23,7 @@ if __name__ == "__main__":
             matched_product = logAuxiliary.get_best_matched_prod(log["package"], matched_products)
         log_in_sparql = logToRDF.dpkg_log_to_sparql(log, matched_product)
         print(log_in_sparql)
-        dbOperations.insert_into_graph(log_in_sparql)
+        #dbOperations.insert_into_graph(log_in_sparql)
         print("-----------------------------------------------")
         print("Insertion completed.")
         print("*****************************************")

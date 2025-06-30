@@ -7,7 +7,7 @@ if __name__ == "__main__":
     input_file = "../../resources/dpkg.log"
     parser = logExtraction.LogParser(input_file)
     parser.parse_log()
-    graph_uri = "http://100.68.30.236/linpack"
+    graph_uri = "http://localhost:8890/linpack"
 
     for log in parser.parsed_logs:
         print(log)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
             matched_product = logAuxiliary.get_best_matched_prod(log["package"], matched_products)
         log_in_sparql = logToRDF.dpkg_log_to_sparql(log, matched_product, graph_uri)
         print(log_in_sparql)
-        #dbOperations.insert_into_graph(log_in_sparql)
+        dbOperations.insert_into_graph(log_in_sparql)
         print("-----------------------------------------------")
         print("Insertion completed.")
         print("*****************************************")

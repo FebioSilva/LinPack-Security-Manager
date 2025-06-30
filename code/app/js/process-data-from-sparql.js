@@ -158,14 +158,15 @@ export function generateCVEQueryByYear(year) {
  */
 
 export async function fetchDataFromSPARQLEndPoint(query, signal) {
-  const endpoint = 'http://localhost:3001/sparql?query=' + encodeURIComponent(query);
-  const response = await fetch(endpoint, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/sparql-results+json'
-    },
-    signal  // passa o signal aqui (undefined se não for passado)
-  });
+  const response = await fetch("http://localhost:3000/sparql", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/sparql-results+json',
+        },
+        body: `query=${encodeURIComponent(query)}`,
+        signal: signal
+      });
 
   if (!response.ok) {
     const text = await response.text();
@@ -175,6 +176,7 @@ export async function fetchDataFromSPARQLEndPoint(query, signal) {
   const data = await response.json();
   return data.results.bindings;
 }
+
 
 export async function fetchAllDataWithPagination(baseQuery, signal, limit = 10000) {
   let offset = 0;

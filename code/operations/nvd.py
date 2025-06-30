@@ -17,7 +17,7 @@ if __name__ == "__main__":
         print("*****************************************")
 
         # Usa a função otimizada com múltiplos blocos
-        sparql_blocks = nvdToRDF.cve_object_to_sparql(cve)
+        sparql_blocks = nvdToRDF.cve_object_to_sparql(cve,"http://100.68.30.236/linpack")
 
         # Exporta o CVE específico se for o que procuras
         if cve["id"] == "CVE-2025-33138":

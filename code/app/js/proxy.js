@@ -14,7 +14,7 @@ app.get('/sparql', async (req, res) => {
   }
 
   try {
-    const response = await fetch('http://localhost:8890/sparql', {
+    const response = await fetch("http://100.68.30.236:8890/sparql", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

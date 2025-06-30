@@ -6,14 +6,13 @@ def sanitize_for_uri(value):
         return "none"
     return re.sub(r'[^a-zA-Z0-9]', '_', value)
 
-
 def generate_package_uri(package_name, *versions):
     parts = [sanitize_for_uri(package_name)] + \
         [sanitize_for_uri(v) for v in versions]
     return "_".join(parts)
 
 
-def dpkg_log_to_sparql(log_obj, graph_uri="http://localhost:8890/linpack"):
+def dpkg_log_to_sparql(log_obj, matched_product, graph_uri="http://localhost:8890/linpack"):
     sparql_prefix = """
 PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2/>
@@ -65,8 +64,8 @@ INSERT DATA {{
                         logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
-                        logs:installed True ;
-                        linpack:has_related_product cve:prod_{sanitize_for_uri(log_obj['package'])} .
+                        logs:installed True {';' if matched_product else '.'}
+                        {f'linpack:has_related_product cve:prod_{sanitize_for_uri(matched_product)}.' if matched_product else ''}
             """
 
             elif log_obj["action"] == "remove" or log_obj["action"] == "purge":
@@ -75,7 +74,8 @@ INSERT DATA {{
                         logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
-                        logs:installed False .
+                        logs:installed False {';' if matched_product else '.'}
+                        {f'linpack:has_related_product cve:prod_{sanitize_for_uri(matched_product)}.' if matched_product else ''}
             """
 
             elif log_obj["action"] == "upgrade":
@@ -87,14 +87,16 @@ INSERT DATA {{
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['replace']}" ;
                         logs:installed False ;
-                        logs:replaced_by logs:{package_uri} .
+                        logs:replaced_by logs:{package_uri} {';' if matched_product else '.'}
+                        {f'linpack:has_related_product cve:prod_{sanitize_for_uri(matched_product)}.' if matched_product else ''}
             """
                 sparql += f"""
         logs:{package_uri} rdf:type logs:Package ;
                         logs:package_name "{sanitize_for_uri(log_obj['package'])}" ;
                         logs:package_architecture "{log_obj['architecture']}" ;
                         logs:version "{log_obj['version']}" ;
-                        logs:installed True .
+                        logs:installed True {';' if matched_product else '.'}
+                        {f'linpack:has_related_product cve:{matched_product}.' if matched_product else ''}
             """
 
     sparql += """

@@ -1,4 +1,4 @@
-from SPARQLWrapper import SPARQLWrapper, POST, JSON
+from SPARQLWrapper import SPARQLWrapper, GET, POST, JSON
 
 # SPARQL endpoint URL (replace with your actual endpoint)
 SPARQL_ENDPOINT = "http://localhost:8890/sparql"
@@ -27,3 +27,10 @@ def delete_package(query):
     sparql.setMethod(POST)
     sparql.setQuery(query)
     sparql.query()
+
+def get_matched_prods(query):
+    sparql.setMethod(GET)
+    sparql.setReturnFormat(JSON)
+    sparql.setQuery(query)
+    result = sparql.query().convert()
+    return result

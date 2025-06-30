@@ -1,88 +1,71 @@
 import compareVersions from 'dpkg-compare-versions';
 
-export const queryLog = `PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2#>
-PREFIX rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX xsd:  <http://www.w3.org/2001/XMLSchema#>
+export const highestSeverityCVEsQuery = `
+PREFIX cve:     <http://purl.org/cyber/cve#>
+PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX linpack: <http://www.semanticweb.org/linpack/>
 
-SELECT
-  ?log
-  ?type
-  ?timestamp
-  ?action
-  ?state
-  ?decision
-  ?context
-  ?command
-  ?package
+SELECT DISTINCT
+  ?cve
+  ?base_score
+  ?base_severity
+  ?cvss_version
+  ?cvss_code
   ?package_name
   ?package_version
-  ?package_architecture
-  ?installed
-  ?replaced_by
-FROM <http://localhost:8890/linpack>
+   ?min ?max
 WHERE {
-  ## quatro tipos de evento
-  ?log rdf:type ?type .
-  FILTER(?type IN (
-    logs:StateEvent,
-    logs:ActionEvent,
-    logs:ConffileEvent,
-    logs:StartupEvent
-  ))
+  ?package a logs:Package ;
+           logs:installed true ;
+           logs:version              ?package_version ;
+           logs:package_name ?package_name;
+           linpack:has_related_product ?product .
 
-  ## timestamp comum
-  ?log logs:timestamp ?timestamp .
+  ?product a cve:Product ;
+           cve:product_name ?product_name ;
+           cve:has_version_interval ?version_interval .
 
-  ## propriedades específicas
-  OPTIONAL { ?log logs:action   ?action }     # ActionEvent
-  OPTIONAL { ?log logs:state    ?state  }     # StateEvent
-  OPTIONAL { ?log logs:decision ?decision }   # ConffileEvent
-  OPTIONAL { ?log logs:context  ?context }    # StartupEvent
-  OPTIONAL { ?log logs:command  ?command }    # StartupEvent
+  ?version_interval a cve:Versions ;
+                    cve:has_cve_affecting_product ?cve ;
+                    cve:has_product ?product .
 
-  ## pacotes (ActionEvent / StateEvent)
-  OPTIONAL {
-    ?log logs:has_package ?package .
-    ?package
-      logs:package_name         ?package_name ;
-      logs:version              ?package_version ;
-      logs:package_architecture ?package_architecture ;
-      logs:installed            ?installed .
-    OPTIONAL { ?package logs:replaced_by ?replaced_by }
-  }
-}
-ORDER BY ?timestamp
-`
-
-
-export const highestSeverityCVEsQuery = `
-PREFIX cve: <http://purl.org/cyber/cve#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-SELECT ?cve ?description ?base_score ?base_severity ?cvss_version ?cvss_code
-WHERE {
+  OPTIONAL { ?version_interval cve:min ?min . }
+  OPTIONAL { ?version_interval cve:max ?max . }
   ?cve a cve:CVE ;
-       cve:description ?description ;
        cve:base_score ?base_score ;
        cve:base_severity ?base_severity ;
        cve:cvss_version ?cvss_version ;
        cve:cvss_code ?cvss_code .
+
 }
 ORDER BY DESC(?base_score)
-LIMIT 5
 `
-export const countCVEsPerProductQuery = `
-PREFIX : <http://purl.org/cyber/cve#>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+export const countCVEsPerProductQuery = `PREFIX cve:     <http://purl.org/cyber/cve#>
+PREFIX linpack: <http://www.semanticweb.org/linpack/>
+PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-SELECT ?product ?productName (COUNT(?cve) AS ?numCVEs)
+SELECT  ?version_interval ?min ?max (COUNT(DISTINCT ?cve) AS ?cve_count) ?product ?product_name ?package_name ?package_version
 WHERE {
-  ?cve :has_affected_product ?product .
-  ?product rdf:type :Product .
-  ?product :product_name ?productName .
+  ?package a logs:Package ;
+           logs:package_name         ?package_name ;
+           logs:version              ?package_version ;
+           logs:installed true ;
+           linpack:has_related_product ?product .
+
+  ?product a cve:Product ;
+           cve:product_name   ?product_name ;
+           cve:has_version_interval ?version_interval .
+
+  ?version_interval a cve:Versions ;
+                    cve:has_cve_affecting_product ?cve .
+
+  OPTIONAL { ?version_interval cve:min ?min . }
+  OPTIONAL { ?version_interval cve:max ?max . }
 }
-GROUP BY ?product ?productName
-ORDER BY DESC(?numCVEs)
+GROUP BY ?version_interval ?min ?max ?product ?product_name ?package_name ?package_version
+ORDER BY DESC(?cve_count)
 `
 
 export const logsAndCVEs = (year) => `
@@ -142,10 +125,8 @@ WHERE {
            logs:package_name         ?package_name ;
            logs:version              ?package_version ;
            logs:package_architecture ?package_architecture ;
-           logs:installed            True .
-
-  ## Nome do pacote ≈ nome do produto
-  FILTER( LCASE(STR(?package_name)) = LCASE(STR(?product_name)) )
+           logs:installed            True ;
+           linpack:has_related_product ?product .
 
   #######################################################################
   ## Eventos de log relacionados (opcional)                           ##
@@ -228,166 +209,15 @@ function extractLocalName(uri) {
   return uri.substring(Math.max(hashIndex, slashIndex) + 1);
 }
 
-
-/**
-  * Process log data to create a graph structure
-  * @param {Array} bindings - The log data from SPARQL endpoint
-  * @return {Object} - An object containing nodes and links
-  * */
-
-export function processLogDataToGraph(bindings) {
-  const nodesMap = new Map();
-  const links = [];
-
-  bindings.forEach(entry => {
-    const logURI = entry.log?.value;
-    const logId = extractLocalName(logURI);
-    const eventTypeURI = entry.type?.value;
-    const eventType = extractLocalName(eventTypeURI);
-
-    if (!nodesMap.has(logId)) {
-      const node = {
-        id: logId,
-        uri: logURI,
-        type: eventType,
-      };
-
-      if (entry.timestamp) node.timestamp = entry.timestamp.value;
-      if (eventType === "ActionEvent" && entry.action) node.action = entry.action.value;
-      if (eventType === "StateEvent" && entry.state) node.state = entry.state.value;
-      if (eventType === "ConffileEvent" && entry.decision) node.decision = entry.decision.value;
-      if (eventType === "StartupEvent") {
-        if (entry.context) node.context = entry.context.value;
-        if (entry.command) node.command = entry.command.value;
-      }
-
-      nodesMap.set(logId, node);
-    }
-
-    // Aqui o principal ajuste: nomes corretos conforme queryLog
-    const pkgName = entry.package_name?.value;
-    const pkgVersion = entry.package_version?.value;
-    const pkgArch = entry.package_architecture?.value;
-
-    if (pkgName) {
-      const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
-      if (!nodesMap.has(pkgId)) {
-        nodesMap.set(pkgId, {
-          id: pkgId,
-          type: "Package",
-          package_name: pkgName,
-          current_version: pkgVersion,
-          package_architecture: pkgArch,
-          installed: entry.installed?.value === "true" || entry.installed?.value === "1",
-        });
-      }
-
-      links.push({
-        source: logId,
-        target: pkgId,
-        type: "has_package",
-      });
-    }
-  });
-
-  return { nodes: Array.from(nodesMap.values()), links };
-}
-
-
-
-
-export function processCVEDataToGraph(bindings) {
-  const nodesMap = new Map();
-  const links = [];
-  const productVersionsMap = new Map();
-  const cveProductLinks = new Set();  // para evitar duplicados
-
-  bindings.forEach(entry => {
-    const cveUri = entry.cve.value;
-    const cveId  = extractLocalName(cveUri);
-
-    // Nó CVE
-    if (!nodesMap.has(cveId)) {
-      nodesMap.set(cveId, {
-        id: cveId,
-        type: "CVE",
-        uri: cveUri,
-        description: entry.description?.value,
-        base_score: entry.base_score?.value,
-        base_severity: entry.base_severity?.value,
-        cvss_version: entry.cvss_version?.value,
-        cvss_code: entry.cvss_code?.value,
-      });
-    }
-
-    // Produto
-    const productName = entry.product_name?.value;
-    const vendorName  = entry.vendor_name?.value;
-    const productUri  = entry.product?.value;
-    const productId   = `prod_${productName}`;
-
-    if (productName && !nodesMap.has(productId)) {
-      nodesMap.set(productId, {
-        id: productId,
-        type: "Product",
-        name: productName,
-        vendor: vendorName,
-        uri: productUri
-      });
-      productVersionsMap.set(productId, new Map());
-    }
-
-    // Versão
-    const versionUri = entry.version_interval?.value;
-    if (versionUri) {
-      const versionId = extractLocalName(versionUri);
-
-      if (!productVersionsMap.get(productId)?.has(versionId)) {
-        nodesMap.set(versionId, {
-          id: versionId,
-          type: "Version",
-          uri: versionUri,
-          min: entry.min?.value || null,
-          max: entry.max?.value || null,
-        });
-        productVersionsMap.get(productId).set(versionId, true);
-        links.push({ source: productId, target: versionId, type: "has_version" });
-      }
-
-      links.push({ source: versionId, target: cveId, type: "affects" });
-    }
-
-    // Ligação CVE → Product sem duplicados
-    const key = `${cveId}->${productId}`;
-    if (!cveProductLinks.has(key)) {
-      links.push({ source: cveId, target: productId, type: "has_affected_product" });
-      cveProductLinks.add(key);
-    }
-  });
-
-  console.log(`Total nós: ${nodesMap.size}, Total links: ${links.length}`);
-  return {
-    nodes: Array.from(nodesMap.values()),
-    links
-  };
-}
-
-
-
-
 function isValidVersion(v) {
-  return typeof v === "string" && /^\d/.test(v) && !/[^0-9a-zA-Z.-]/.test(v);
+  return typeof v === "string" && /^\d/.test(v);
 }
 
-function versionInRange(version, min, max) {
+export function versionInRange(version, min, max) {
   if (!version || !isValidVersion(version)) return false;
 
-  if (min && !isValidVersion(min)) {
-    min = null;
-  }
-  if (max && !isValidVersion(max)) {
-    max = null;
-  }
+  if (min === '*' || !min) min = null;
+  if (max === '*' || !max) max = null;
 
   if (min && compareVersions(version, min) < 0) {
     return false;
@@ -582,34 +412,69 @@ export function processCVEAndLogDataToGraph(bindings) {
   };
 }
 
-
-
-
-
-
-
-
-// Extract needed data for bubbles: productName and count
 export function processCountData(bindings) {
-  return bindings.map(d => ({
-    productName: d.productName.value,
-    numCVEs: +d.numCVEs.value
+  const packageMap = new Map();
+
+  bindings.forEach(entry => {
+    const pkgName = entry.package_name?.value + entry.package_version?.value;
+    const pkgVersion = entry.package_version?.value;
+    const min = entry.min?.value || null;
+    const max = entry.max?.value || null;
+    const cveCount = parseInt(entry.cve_count?.value || "0", 10);
+
+    if (!pkgName || !pkgVersion || isNaN(cveCount)) return;
+
+    // Aplica o filtro de intervalo [min, max]
+    if (!versionInRange(pkgVersion, min, max)) return;
+
+    // Soma os cve_count para cada pacote
+    if (!packageMap.has(pkgName)) {
+      packageMap.set(pkgName, 0);
+    }
+    packageMap.set(pkgName, packageMap.get(pkgName) + cveCount);
+  });
+
+  return Array.from(packageMap.entries()).map(([productName, totalCVEs]) => ({
+    productName,
+    numCVEs: totalCVEs
   }));
 }
 
+
 export function processTopCVEsData(bindings) {
-  const cveList = []
-  bindings.forEach(cve => {
-    cveList.push({ 
-      id: cve.cve.value.split("#")[1],
-      score: Number(cve['base_score']['value']),
-      severity: cve['base_severity']['value'],
-      version: cve['cvss_version']['value']
-    })
-  })
-  return {
-    cves: cveList
-  }
+  const cveList = [];
+
+  bindings.forEach(entry => {
+    const pkgVersion = entry.package_version?.value;
+    const min = entry.min?.value || null;
+    const max = entry.max?.value || null;
+
+    // Filtrar pelas versões
+    if (!versionInRange(pkgVersion, min, max)) return;
+
+    const cveId = entry.cve?.value.split("#")[1];
+    const score = parseFloat(entry.base_score?.value || "0");
+
+    if (!cveId || isNaN(score)) return;
+
+    cveList.push({
+      id: cveId,
+      description: entry.description?.value,
+      score,
+      severity: entry.base_severity?.value,
+      version: entry.cvss_version?.value,
+      code: entry.cvss_code?.value,
+      packageName: entry.package_name?.value,
+      packageVersion: pkgVersion,
+    });
+  });
+
+  // Ordenar por score decrescente e pegar os 5 primeiros
+  const top5 = cveList
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
+  return { cves: top5 };
 }
 
 export function mergeGraphs(graph1, graph2) {
@@ -648,32 +513,3 @@ export function mergeGraphs(graph1, graph2) {
   };
 }
 
-
-
-// Main function
-function main() {
-  fetchDataFromSPARQLEndPoint(logsAndCVEs)
-    .then(data => {
-      console.log("Fetched data:", data);
-      const graph = processCVEDataToGraph(data)
-      graph.nodes.forEach(node => {
-        if (node.type === "Version") {
-          //console.log("Version Node:", node);
-        }
-      });
-      // const graph = processLogDataToGraph(data);
-      // graph.nodes.forEach(node => {
-      //   console.log("Node:", node);
-      // });
-      // graph.links.forEach(link => {
-      //   console.log("Link:", link);
-      // });
-      // console.log(encodeURIComponent(queryLog));
-    })
-    .catch(error => {
-      console.error("Error fetching SPARQL data:", error);
-    });
-}
-
-
-//main();

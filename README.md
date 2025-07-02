@@ -22,7 +22,7 @@ LinPack collects data about installed packages and known security vulnerabilitie
 - **Faster identification of at-risk packages**;
 - **Improved monitoring** of evolving vulnerabilities.
 
-## System stores this structured information in a triple store, a type of **non-relational database**, enabling advanced semantic queries and flexible data management.
+## The system stores this structured information in a triple store, a type of **non-relational database**, enabling advanced semantic queries and flexible data management.
 
 ## 📸 System Architecture
 
@@ -47,6 +47,7 @@ LinPack collects data about installed packages and known security vulnerabilitie
 - **Semantic Technologies:** RDF, OWL, Turtle, SPARQL
 - **Triple Store:** OpenLink Virtuoso
 - **APIs:** National Vulnerability Database (NVD)
+- **Web Application:** Javascript, D3, Webpack, HTML5, CSS3
 - **Others:** Docker, SPARQLWrapper
 
 ---
@@ -57,8 +58,7 @@ LinPack collects data about installed packages and known security vulnerabilitie
 | --------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | `code/`                                                                                 | Source code directory                               |
 | &nbsp;&nbsp;&nbsp;&nbsp;`app/`                                                          | Application logic and processing                    |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`js/main.js`                            | Main JavaScript file for the web interface          |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`js/proxy.js`                           | JavaScript proxy for requests to Virtuoso DB        |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`src/index.js`                            | Main JavaScript file for the web interface          |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`index.html`                            | Main HTML file for the web interface                |
 | &nbsp;&nbsp;&nbsp;&nbsp;`operations/`                                                   | Log and CVE processing module                               |
 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`log.py`                                | Extracts, converts and uploads logs to Virtuoso DB  |
@@ -168,22 +168,23 @@ If successful, this will return a list of CVEs for the first query and a list of
 
 ---
 
-## 🌐 4. Running the Web Interface (basic prototype)
+## 🌐 4. Running the Web Interface
 
 ```bash
-cd ../app/js
-node proxy.js
+cd ../app
+npx webpack
+npx webpack serve
 ```
 
-Now open `index.html` in your browser to access LinPack's web interface. The app connects to Virtuoso and allows you to explore the knowledge graph of vulnerabilities and packages.
+Now open a tab in your browser and enter the following URI to access LinPack's web interface: **http://localhost:3000/**. The app connects to Virtuoso and allows you to explore the knowledge graph of vulnerabilities and packages.
 
 ---
 
 ## 🗺️ Roadmap / TODO
 
-- Improve web application, to allow filtering and searching of vulnerabilities by adding more advanced SPARQL queries for deeper insights.
-- Implement LLM's for advanced processing of data
-- Make LinkPack available as a web service instead of a local application, allowing users to access it via a web interface without needing to run the backend locally.
+- Implement LLM's for automatic prioritization and improved matching between packages and vulnerable products;
+- Improve the consistency of the representation of versions of vulnerable products;
+- Filter products by version in the system and not on the web application.
 
 ---
 

@@ -80,7 +80,7 @@ LinPack collects data about installed packages and known security vulnerabilitie
 
 - Python
 - Docker (to run Virtuoso)
-- SPARQLWrapper
+- Node.js
 
 ---
 
@@ -154,6 +154,7 @@ LIMIT 10
 ```
 
 ```sparql
+PREFIX : <http://www.semanticweb.org/logs-ontology-v2/>
 SELECT ?event ?action ?timestamp ?package
 WHERE {
   ?event a :ActionEvent ;

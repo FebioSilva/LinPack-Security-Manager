@@ -84,7 +84,7 @@ SELECT DISTINCT
        ?version_interval ?min ?max
 
        ?package  ?package_name ?package_version ?package_architecture
-       ?log      ?event_type   ?timestamp
+       ?log      ?event_type   ?timestamp ?action ?state ?decision ?command
 WHERE {
   #######################################################################
   ## CVE                                                               ##
@@ -128,14 +128,19 @@ WHERE {
            logs:installed            True ;
            linpack:has_related_product ?product .
 
+
   #######################################################################
   ## Eventos de log relacionados (opcional)                           ##
   #######################################################################
   OPTIONAL {
     ?log logs:has_package ?package ;
          rdf:type          ?event_type ;
-         logs:timestamp    ?timestamp .
+         logs:timestamp    ?timestamp.
   }
+  OPTIONAL { ?log logs:action ?action . }
+  OPTIONAL { ?log logs:state ?state . }
+  OPTIONAL { ?log logs:decision ?decision . }
+  OPTIONAL { ?log logs:command ?command . }
 }
 `
 
@@ -391,6 +396,8 @@ export function processCVEAndLogDataToGraph(bindings) {
           uri: logUri,
           type: eventType || "Log",
           timestamp: entry.timestamp?.value,
+          action: entry.action?.value,
+          state: entry.state?.value,
         });
       }
 

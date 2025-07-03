@@ -15,7 +15,8 @@
     "cors": "^2.8.5",
     "dpkg-compare-versions": "^1.0.3",
     "express": "^5.1.0",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "sleep-promise": "^9.1.0"
   },
   "devDependencies": {
     "webpack": "^5.99.9",

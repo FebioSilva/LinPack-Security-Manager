@@ -21,14 +21,14 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
-    log_id = f"log{log_obj['log_id']}"
+    log_id = f"log{sanitize_for_uri(log_obj['log_id'])}"
     log_type = log_obj["type"].capitalize() + "Event"
 
     sparql = sparql_prefix + f"""
 INSERT DATA {{
   GRAPH <{graph_uri}> {{
     logs:{log_id} rdf:type logs:{log_type} ;
-                    logs:timestamp "{log_obj['timestamp']}"^^xsd:dateTime ;
+                    logs:timestamp_epoch {log_obj['timestamp']} ;
 """
     if log_obj["type"] == "action":
         package_uri = generate_package_uri(

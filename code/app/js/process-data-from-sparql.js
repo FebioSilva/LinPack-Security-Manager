@@ -135,7 +135,7 @@ WHERE {
   OPTIONAL {
     ?log logs:has_package ?package ;
          rdf:type          ?event_type ;
-         logs:timestamp    ?timestamp.
+         logs:timestamp_epoch    ?timestamp.
   }
   OPTIONAL { ?log logs:action ?action . }
   OPTIONAL { ?log logs:state ?state . }
@@ -143,6 +143,7 @@ WHERE {
   OPTIONAL { ?log logs:command ?command . }
 }
 `
+
 
 export function generateCVEQueryByYear(year) {
   console.log("Generating CVE query for year:", year);
@@ -155,7 +156,38 @@ export function generateCVEQueryByYear(year) {
   }
 }
 
+const countNewVulnerableLogsQuery = (lastTimeStamp) => `
+PREFIX cve:     <http://purl.org/cyber/cve#>
+PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
+PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX linpack: <http://www.semanticweb.org/linpack/>
 
+SELECT (COUNT(DISTINCT ?log) AS ?logCount)
+WHERE {
+  # Pacotes instalados
+  ?package a logs:Package ;
+           logs:installed true ;
+           logs:package_name ?package_name ;
+           linpack:has_related_product ?product .
+
+  # Produtos com nome igual ao do pacote
+  ?product a cve:Product ;
+           cve:product_name ?product_name ;
+           cve:has_version_interval ?vi .
+
+  # Versões afetadas e ligação ao CVE
+  ?vi a cve:Versions ;
+      cve:has_product ?product ;
+      cve:has_cve_affecting_product ?cve .
+
+  # Evento de log associado ao pacote
+  ?log logs:has_package ?package ;
+       logs:timestamp_epoch ?timestamp .
+
+  # Filtro por timestamp (substituir pela data desejada)
+  FILTER(?timestamp > ${lastTimeStamp})
+}`
 /**
   * Fetch data from SPARQL endpoint
   * @param {string} query - The SPARQL query to execute
@@ -521,4 +553,24 @@ export function mergeGraphs(graph1, graph2) {
     links: Array.from(linkMap.values())
   };
 }
+
+export async function getMostRecentLogData(lastTimeStamp) {
+  if (!lastTimeStamp) {
+    console.error("Timestamp inválido para consulta de logs recentes");
+    return 0;
+  }
+
+  const query = countNewVulnerableLogsQuery(lastTimeStamp);
+  try {
+    const data = await fetchDataFromSPARQLEndPoint(query);
+    console.log("Dados de logs recentes:", data[0].logCount?.value);
+    const logCount = parseInt(data[0]?.logCount?.value || "0", 10);
+    return logCount;
+  } catch (err) {
+    console.error("Erro ao buscar logs recentes:", err);
+    return 0;
+  }
+}
+
+
 

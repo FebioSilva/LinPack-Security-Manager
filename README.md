@@ -54,23 +54,23 @@ LinPack collects data about installed packages and known security vulnerabilitie
 
 ## 📂 Project Structure
 
-| Path/Folder                                                                             | Description                                         |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------- |
-| `code/`                                                                                 | Source code directory                               |
-| &nbsp;&nbsp;&nbsp;&nbsp;`app/`                                                          | Application logic and processing                    |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`src/index.js`                            | Main JavaScript file for the web interface          |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`index.html`                            | Main HTML file for the web interface                |
-| &nbsp;&nbsp;&nbsp;&nbsp;`operations/`                                                   | Log and CVE processing module                               |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`log.py`                                | Extracts, converts and uploads logs to Virtuoso DB  |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`nvd.py`                                | Extracts, converts and uploads CVEs to Virtuoso DB  |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`dbOperations.py`                       | Handles DB operations for inserting into Virtuoso   |
-| `resources/`                                                                            | Resources directory                                 |
-| &nbsp;&nbsp;&nbsp;&nbsp;`ontologies/`                                                   | Ontology definitions                                |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`linpack_ontology.ttl`                  | Main ontology (imports CVE and DPKG log ontologies) |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`cve.ttl`                               | CVE ontology (extended from UCO)                    |
-| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`log.event.ontology_v2.ttl`             | DPKG log ontology (v2)                              |
-| &nbsp;&nbsp;&nbsp;&nbsp;`dpkg.log`                                                      | Sample dataset of DPKG logs                         |
-| `Final_Project.pdf`                                                                     | Final project report                                |
+| Path/Folder                                                                 | Description                                         |
+| --------------------------------------------------------------------------- | --------------------------------------------------- |
+| `code/`                                                                     | Source code directory                               |
+| &nbsp;&nbsp;&nbsp;&nbsp;`app/`                                              | Application logic and processing                    |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`src/index.js`              | Main JavaScript file for the web interface          |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`index.html`                | Main HTML file for the web interface                |
+| &nbsp;&nbsp;&nbsp;&nbsp;`operations/`                                       | Log and CVE processing module                       |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`log.py`                    | Extracts, converts and uploads logs to Virtuoso DB  |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`nvd.py`                    | Extracts, converts and uploads CVEs to Virtuoso DB  |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`dbOperations.py`           | Handles DB operations for inserting into Virtuoso   |
+| `resources/`                                                                | Resources directory                                 |
+| &nbsp;&nbsp;&nbsp;&nbsp;`ontologies/`                                       | Ontology definitions                                |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`linpack_ontology.ttl`      | Main ontology (imports CVE and DPKG log ontologies) |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`cve.ttl`                   | CVE ontology (extended from UCO)                    |
+| &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`log.event.ontology_v2.ttl` | DPKG log ontology (v2)                              |
+| &nbsp;&nbsp;&nbsp;&nbsp;`dpkg.log`                                          | Sample dataset of DPKG logs                         |
+| `Final_Project.pdf`                                                         | Final project report                                |
 
 ---
 
@@ -127,11 +127,13 @@ npm install
 
 ## 🐍 3. Running the Python Scripts to Populate Virtuoso DB
 
+Guarantee that the sequence of execution is as follows:
+
 ```bash
-cd ../log
-python log.py
 cd ../nvd
 python nvd.py
+cd ../log
+python log.py
 ```
 
 ### ✅ Testing the Setup

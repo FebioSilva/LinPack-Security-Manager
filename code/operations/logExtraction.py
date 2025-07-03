@@ -1,14 +1,18 @@
+from datetime import datetime, timezone
 import re
+import uuid
 
 
 class LogParser:
     def __init__(self, file_path):
         self.file_path = file_path
         self.parsed_logs = []
-        self.log_id = 1
+        self.log_id = str(uuid.uuid4())
 
     def parse_log(self):
         with open(self.file_path, 'r') as file:
+            if not file:
+                return
             for line in file:
                 line = line.strip()
 
@@ -38,11 +42,13 @@ class LogParser:
 
                 # Check and store matches
                 if action_match:
+                    dt_str = action_match.group("timestamp")
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     action = action_match.group("action")
                     if action == "install":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
-                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "timestamp": int(dt.timestamp() * 1000),
                             "type": "action",
                             "action": action_match.group("action"),
                             "package": action_match.group("package"),
@@ -53,7 +59,7 @@ class LogParser:
                     elif action == "upgrade":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
-                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "timestamp": int(dt.timestamp() * 1000),
                             "type": "action",
                             "action": action_match.group("action"),
                             "package": action_match.group("package"),
@@ -65,7 +71,7 @@ class LogParser:
                     elif action == "remove" or action == "purge":
                         self.parsed_logs.append({
                             "log_id": self.log_id,
-                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "timestamp": int(dt.timestamp() * 1000),
                             "type": "action",
                             "action": action_match.group("action"),
                             "package": action_match.group("package"),
@@ -76,7 +82,7 @@ class LogParser:
                     else:
                         self.parsed_logs.append({
                             "log_id": self.log_id,
-                            "timestamp": action_match.group("timestamp").replace(" ", "T"),
+                            "timestamp": int(dt.timestamp() * 1000),
                             "type": "action",
                             "action": action_match.group("action"),
                             "package": action_match.group("package"),
@@ -85,9 +91,11 @@ class LogParser:
                         })
 
                 elif state_match:
+                    dt_str = state_match.group("timestamp")
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": state_match.group("timestamp").replace(" ", "T"),
+                        "timestamp": int(dt.timestamp() * 1000),
                         "type": "state",
                         "state": state_match.group("state"),
                         "package": state_match.group("package"),
@@ -96,18 +104,22 @@ class LogParser:
                     })
 
                 elif conffile_match:
+                    dt_str = conffile_match.group("timestamp")
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": conffile_match.group("timestamp").replace(" ", "T"),
+                        "timestamp": int(dt.timestamp() * 1000),
                         "type": "conffile",
                         "filepath": conffile_match.group("filepath").strip(),
                         "decision": conffile_match.group("decision"),
                     })
 
                 elif startup_match:
+                    dt_str = startup_match.group("timestamp")
+                    dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
                     self.parsed_logs.append({
                         "log_id": self.log_id,
-                        "timestamp": startup_match.group("timestamp").replace(" ", "T"),
+                        "timestamp": int(dt.timestamp() * 1000),
                         "type": "startup",
                         "context": startup_match.group("context"),
                         "command": startup_match.group("command"),
@@ -116,7 +128,7 @@ class LogParser:
                 else:
                     continue
 
-                self.log_id += 1
+                self.log_id = str(uuid.uuid4())  # Generate a new unique ID for the next log entry
 
     def write_to_file(self, output_file):
         with open(output_file, 'w') as file:
@@ -152,5 +164,6 @@ if __name__ == "__main__":
     parser.parse_log()
     parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
     print("Parsed logs:")
-    installed_logs = [log for log in parsed_logs if log["type"] == "action" and log["action"] == "install"]
+    installed_logs = [log for log in parsed_logs if log["type"]
+                      == "action" and log["action"] == "install"]
     print(parsed_logs)  # Print parsed logs for debugging

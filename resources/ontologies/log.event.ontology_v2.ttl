@@ -97,12 +97,12 @@
        rdfs:comment "Represents the state of the package in a StateEvent" .
 
 
-###  http://www.semanticweb.org/logs-ontology-v2/timestamp
-:timestamp rdf:type owl:DatatypeProperty ;
-           rdfs:subPropertyOf owl:topDataProperty ;
-           rdfs:domain :EventHandling ;
-           rdfs:range xsd:dateTimeStamp ;
-           rdfs:comment "Represents the timestamp in which the event was captured" .
+###  http://www.semanticweb.org/logs-ontology-v2/timestamp_epoch
+:timestamp_epoch rdf:type owl:DatatypeProperty ;
+                 rdfs:subPropertyOf owl:topDataProperty ;
+                 rdfs:domain :EventHandling ;
+                 rdfs:range xsd:long ;
+                 rdfs:comment "Represents the timestamp in which the event was captured" .
 
 
 ###  http://www.semanticweb.org/logs-ontology-v2/type
@@ -152,7 +152,7 @@
 ###  http://www.semanticweb.org/logs-ontology-v2/EventHandling
 :EventHandling rdf:type owl:Class ;
                rdfs:subClassOf [ rdf:type owl:Restriction ;
-                                 owl:onProperty :timestamp ;
+                                 owl:onProperty :timestamp_epoch ;
                                  owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
                                  owl:onDataRange xsd:dateTimeStamp
                                ] ;

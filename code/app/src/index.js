@@ -2,8 +2,9 @@ import { renderBubbleChart } from '../js/bubble-chart-render.js';
 import { renderGraph } from '../js/graph-render.js';
 import { renderStatistics } from '../js/statistics-render.js';
 import { processTopCVEsData,fetchDataFromSPARQLEndPoint, logsAndCVEs, generateCVEQueryByYear, processCVEAndLogDataToGraph, highestSeverityCVEsQuery, countCVEsPerProductQuery,
-  processCountData, fetchAllDataWithPagination, versionInRange
+  processCountData, fetchAllDataWithPagination, getMostRecentLogData
 } from '../js/process-data-from-sparql.js';
+import sleep from 'sleep-promise';
 
 // Declara abortController UMA vez no topo do arquivo
 let abortController = null;
@@ -76,11 +77,37 @@ async function loadAndRenderView(view, year) {
   }
 }
 
+function changeNewVulnerableLogsBlockVisibility(logCount) {
+  const newVulnerableLogsBlock = document.getElementById("newVulnerableLogsBlock");
+  if (newVulnerableLogsBlock) {
+    newVulnerableLogsBlock.style.display = logCount > 0 ? "block" : "none";
+  }
+}
+
+function dismissNotification() {
+  const block = document.getElementById("newVulnerableLogsBlock");
+  if (block) {
+    block.style.display = "none";
+  }
+}
+
+function getLocalTimestamp() {
+    const now = new Date();
+    // getTimezoneOffset retorna minutos de diferença local para UTC (ex: -60 para UTC+1)
+    const offsetMinutes = now.getTimezoneOffset();
+    // Ajusta o timestamp UTC para local subtraindo offset em milissegundos
+    return now.getTime() - offsetMinutes * 60 * 1000;
+  }
+
+
 async function main() {
   // Espera o DOM estar carregado
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     const viewSelect = document.getElementById("viewSelect");
     const yearSelect = document.getElementById("yearSelect");
+    const dismissBtn = document.getElementById("dismissNotificationBtn");
+    const refreshBtn = document.getElementById("refreshPageBtn");
+    const notificationBlock = document.getElementById("newVulnerableLogsBlock");
 
     if (!viewSelect || !yearSelect) {
       console.error("Elementos #viewSelect e/ou #yearSelect não encontrados no DOM");
@@ -101,10 +128,35 @@ async function main() {
       loadAndRenderView(view, year);
     });
 
+    dismissBtn?.addEventListener("click", () => {
+      if (notificationBlock) {
+        notificationBlock.style.display = "none";
+      }
+    });
+
+    refreshBtn?.addEventListener("click", () => {
+      location.reload();
+    });
+
     // Inicialização
     updateControlsVisibility(viewSelect.value);
     loadAndRenderView(viewSelect.value, yearSelect.value);
+    
   });
+
+
+  let lastTime = getLocalTimestamp();
+
+  while (true) {
+    const logCount = await getMostRecentLogData(lastTime);
+    if (logCount > 0) {
+      changeNewVulnerableLogsBlockVisibility(logCount);
+      console.log(`Novos logs vulneráveis detectados: ${logCount}`);
+    }
+    lastTime = getLocalTimestamp();
+    await sleep(5000); // 5 seconds
+  }
 }
+
 
 main();

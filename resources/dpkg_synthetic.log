@@ -1,0 +1,14 @@
+2025-07-04 15:26:51.655672 upgrade nvidia-driver-440:amd64 2.19.43 4.1.99
+2025-07-04 15:26:51.655672 status half-configured nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 status unpacked nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 status half-installed nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 status unpacked nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 configure nvidia-driver-440:amd64 4.1.99 <none>
+2025-07-04 15:26:51.655672 status half-configured nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 status installed nvidia-driver-440:amd64 4.1.99
+2025-07-04 15:26:51.655672 trigproc linux-headers-generic:amd64 1.17.95 <none>
+2025-07-04 15:26:51.655672 status half-configured linux-headers-generic:amd64 1.17.95
+2025-07-04 15:26:51.655672 status installed linux-headers-generic:amd64 1.17.95
+2025-07-04 15:26:51.655672 trigproc vim:amd64 1.12.11-0ubuntu1~bionic <none>
+2025-07-04 15:26:51.655672 status half-configured vim:amd64 1.12.11-0ubuntu1~bionic
+2025-07-04 15:26:51.655672 status installed vim:amd64 1.12.11-0ubuntu1~bionic

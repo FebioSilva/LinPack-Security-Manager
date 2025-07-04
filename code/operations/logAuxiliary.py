@@ -3,18 +3,21 @@ import Levenshtein
 
 
 def sanitize_for_uri(value):
+    """Sanitizes string to create valid blank node IDs (alphanumeric and underscore)"""
     if value is None:
         return "none"
     return re.sub(r'[^a-zA-Z0-9]', '_', value)
 
 
 def generate_package_uri(package_name, *versions):
+    """Joins package name and version and sanitizes the result string to create valid blank node IDs (alphanumeric and underscore)"""
     parts = [sanitize_for_uri(package_name)] + \
         [sanitize_for_uri(v) for v in versions]
     return "_".join(parts)
 
 
 def ask_for_package_to_sparql(log_obj, graph_uri="http://localhost:8890/linpack"):
+    """Generates a SPARQL query to ask if a certain package exists in the database"""
     sparql_prefix = """
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -34,6 +37,7 @@ ASK {{
 
 
 def delete_package_to_sparql(log_obj, graph_uri="http://localhost:8890/linpack"):
+    """Generates a SPARQL query to delete a certain package that exists in the database"""
     sparql_prefix = """
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -53,6 +57,7 @@ DELETE WHERE {{
     return sparql
 
 def get_matched_prods_to_sparql(package):
+    """Generates a SPARQL query to get all the products whose names are contained within the package name"""
     sparql_prefix = """
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2/>
 PREFIX cve:  <http://purl.org/cyber/cve#>
@@ -72,6 +77,7 @@ WHERE {{
     return sparql
 
 def get_best_matched_prod(package, results):
+    """Selects a product name that was contained within the package name and has the best match, using the Levenshtein Algorithm"""
     best_match = None
     best_ratio = 0.0
     for result in results["results"]["bindings"]:

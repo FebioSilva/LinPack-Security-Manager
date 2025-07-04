@@ -2,17 +2,20 @@ import re
 
 
 def sanitize_for_uri(value):
+    """Sanitizes string to create valid blank node IDs (alphanumeric and underscore)"""
     if value is None:
         return "none"
     return re.sub(r'[^a-zA-Z0-9]', '_', value)
 
 def generate_package_uri(package_name, *versions):
+    """Joins package name and version and sanitizes the result string to create valid blank node IDs (alphanumeric and underscore)"""
     parts = [sanitize_for_uri(package_name)] + \
         [sanitize_for_uri(v) for v in versions]
     return "_".join(parts)
 
 
 def dpkg_log_to_sparql(log_obj, matched_product, graph_uri="http://localhost:8890/linpack"):
+    """Generates SPARQL triples for log"""
     sparql_prefix = """
 PREFIX linpack: <http://www.semanticweb.org/linpack/>
 PREFIX logs: <http://www.semanticweb.org/logs-ontology-v2/>
@@ -54,6 +57,7 @@ INSERT DATA {{
     sparql = sparql.rstrip(" ;\n") + " .\n"
 
     if 'package' in log_obj:
+        # If type of log is 'action', then a package individual is created
         if log_obj["type"] == "action":
             package_uri = generate_package_uri(
                 log_obj['package'], log_obj['version'])
@@ -105,9 +109,8 @@ INSERT DATA {{
   """
     return sparql
 
-
+# Main function to test the transformation of logs into RDF Triples and it's insertion into the database 
 if __name__ == "__main__":
-    # Example log object
     log_obj = {
         'log_id': 1,
         'type': 'action',
@@ -115,8 +118,7 @@ if __name__ == "__main__":
         'action': 'install',
         'package': 'openssl',
         'architecture': 'amd64',
-        'version_old': '1.1.1f-1ubuntu2.16',
-        'version_new': '1.1.1f-1ubuntu2.17'
+        'version': '1.1.1f-1ubuntu2.17'
     }
     log_state_obj = {
         'log_id': 2,

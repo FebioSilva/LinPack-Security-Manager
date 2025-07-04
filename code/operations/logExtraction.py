@@ -4,19 +4,21 @@ import uuid
 
 
 class LogParser:
+    """Class used for extraction of logs"""
     def __init__(self, file_path):
         self.file_path = file_path
         self.parsed_logs = []
         self.log_id = str(uuid.uuid4())
 
     def parse_log(self):
+        """Extracts all the logs from the selected log file"""
         with open(self.file_path, 'r') as file:
             if not file:
                 return
             for line in file:
                 line = line.strip()
 
-                # Match action logs (install, upgrade, remove)
+                # Match action logs (install, upgrade, remove, trigproc, configure, ...)
                 action_match = re.match(
                     r"(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) (?P<action>install|upgrade|remove|purge|configure|unpack|triggered|trigproc|trigawait) (?P<package>[\w\-\.\+]+)(?:\s*:\s*(?P<architecture>[\w\d\-]+) (?P<version_old><none>|[^\s]+)\s*(?P<version_new><none>|[^\s]+)?)",
                     line
@@ -131,6 +133,7 @@ class LogParser:
                 self.log_id = str(uuid.uuid4())  # Generate a new unique ID for the next log entry
 
     def write_to_file(self, output_file):
+        """Stores the extracted logs in a human-readable file"""
         with open(output_file, 'w') as file:
             for entry in self.parsed_logs:
                 file.write(
@@ -155,15 +158,12 @@ class LogParser:
                 file.write("\n")  # Add a blank line between entries
 
 
-# Exemplo de uso
+# Main function to test the extraction of the logs
 if __name__ == "__main__":
-    # Change it for the real path to the dpkg.log file
     input_file = "../resources/dpkg.log"
 
     parser = LogParser(input_file)
     parser.parse_log()
-    parsed_logs = parser.parsed_logs  # Get parsed logs for further processing
+    parsed_logs = parser.parsed_logs
     print("Parsed logs:")
-    installed_logs = [log for log in parsed_logs if log["type"]
-                      == "action" and log["action"] == "install"]
-    print(parsed_logs)  # Print parsed logs for debugging
+    installed_logs = [log for log in parsed_logs if log["type"] == "action" and log["action"] == "install"]

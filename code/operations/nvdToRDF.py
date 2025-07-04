@@ -3,12 +3,12 @@ from datetime import datetime
 
 
 def sanitize_for_blank_node(value: str) -> str:
-    """Sanitize string to create valid blank node IDs (alphanumeric and underscore)."""
+    """Sanitizes string to create valid blank node IDs (alphanumeric and underscore)"""
     return re.sub(r"[^a-zA-Z0-9_]", "_", (value or "").strip().lower())
 
 
 def escape_string_for_sparql(value: str) -> str:
-    """Escape backslashes, double quotes, and newlines for SPARQL literals."""
+    """Escapes backslashes, double quotes, and newlines for SPARQL literals"""
     if not value:
         return ""
     value = value.replace("\\", "\\\\")
@@ -19,16 +19,17 @@ def escape_string_for_sparql(value: str) -> str:
 
 
 def normalize_part(v: str | None) -> str:
-    """Normalize version parts, converting None or '*' to 'all'."""
+    """Normalizes version parts, converting None or '*' to 'all'"""
     if v in (None, "*"):
         return "all"
     return sanitize_for_blank_node(v)
 
 
 def process_version_interval(start_v, end_v, cve_id, prd_id, prd_name):
-    """Generate SPARQL triples for version intervals."""
+    """Generates SPARQL triples for version intervals"""
     ver_blocks = []
 
+    # If there is a max version, min version or even both...
     if start_v or end_v:
         min_v = start_v if start_v else "*"
         max_v = end_v if end_v else "*"
@@ -41,7 +42,7 @@ def process_version_interval(start_v, end_v, cve_id, prd_id, prd_name):
         ver_blocks.append((ver_id, ver_block))
         return ver_blocks
 
-    # Caso todos os versions (sem limites)
+    # If there are no limits to the version...
     ver_id = f"cve:{sanitize_for_blank_node(prd_name)}_vers_all"
     ver_block = f"""    {ver_id} a cve:Versions ;
         cve:has_product {prd_id} ;
@@ -50,9 +51,8 @@ def process_version_interval(start_v, end_v, cve_id, prd_id, prd_name):
     return ver_blocks
 
 
-
-
 def cve_object_to_sparql(cve_obj, graph_uri="http://localhost:8890/linpack"):
+    """Generates SPARQL triples for cve"""
     PREFIX = """
 PREFIX cve: <http://purl.org/cyber/cve#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -118,6 +118,7 @@ INSERT DATA {{
 }}"""
         )
 
+    # CPEs (Product, Vendor and Version)
     vendor_seen = set()
     product_seen = set()
     version_seen = set()
@@ -130,6 +131,7 @@ INSERT DATA {{
         vnd_id = f"cve:vendor_{sanitize_for_blank_node(vendor)}"
         prd_id = f"cve:prod_{sanitize_for_blank_node(product)}"
 
+        # Version
         vers_intv = cpe.get("version_intervals", [])
         if not vers_intv:
             vers_intv = [
@@ -149,6 +151,7 @@ INSERT DATA {{
             product_lines.append(
                 f"    {prd_id} cve:has_version_interval {ver_id} .")
 
+        # Product
         if prd_id not in product_seen:
             product_seen.add(prd_id)
             product_lines.append(f"""    {prd_id} a cve:Product ;
@@ -158,6 +161,7 @@ INSERT DATA {{
         product_lines.append(
             f"    cve:{cve_id} cve:has_affected_product {prd_id} .")
 
+        # Vendor
         if vnd_id not in vendor_seen:
             vendor_seen.add(vnd_id)
             vendor_lines.append(f"""    {vnd_id} a cve:Vendor ;
@@ -179,9 +183,8 @@ INSERT DATA {{
 
     return queries
 
-
+# Main function to test the transformation of CVEs into RDF Triples and it's insertion into the database 
 if __name__ == "__main__":
-    # Example usage
     cve_example = {
         "id": "CVE-2023-12345",
         "pubDate": datetime(2023, 10, 1, 12, 0),

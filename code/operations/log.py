@@ -4,6 +4,7 @@ import logAuxiliary
 import dbOperations
 
 def process_dpkg_log(input_file):
+    """Extracts logs from a given file and inserts them into the database"""
     parser = logExtraction.LogParser(input_file)
     parser.parse_log()
     graph_uri = "http://localhost:8890/linpack"
@@ -32,7 +33,7 @@ def process_dpkg_log(input_file):
         print("Insertion completed.")
         print("*****************************************")
 
-
+# Main function to extract logs from a chosen file and insert them into the database
 if __name__ == "__main__":
     input_file = "../../resources/dpkg.log"
     process_dpkg_log(input_file)

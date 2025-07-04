@@ -8,8 +8,7 @@ import requests
 # ─────────────────────────────
 
 def is_linux_cpe(cpe):
-    """Return True if the CPE refers to a Linux distribution or the Linux
-    kernel, False otherwise."""
+    """Checks if a a certain CPE refers to a Linux distribution or the Linux kernel"""
     vendor = (cpe.get("vendor") or "").lower()
     product = (cpe.get("product") or "").lower()
     target_hw = (cpe.get("target_hw") or "").lower()
@@ -36,7 +35,7 @@ def is_linux_cpe(cpe):
 
 def fetch_cves_for_package(start_date: datetime, end_date: datetime):
     """Download CVEs from the NVD API 2.0 within a date window and return a 
-    list of Python dicts already filtered down to Linux-related CPEs."""
+    list of Python dicts already filtered down to Linux-related CPEs"""
 
     url = "https://services.nvd.nist.gov/rest/json/cves/2.0/"
     api_key = "dbc90df4-2777-4c3c-99a3-9821c42729d3"
@@ -87,7 +86,6 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                             min_v = start_incl or start_excl
                             max_v = end_incl or end_excl
 
-                            # Corrige para não deixar max_v terminar em '.1' se fizer sentido
                             if max_v and max_v.endswith(".1"):
                                 max_v = max_v.rsplit(".", 1)[0]
 
@@ -117,17 +115,17 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                                 "target_hw": target_hw,
                             })
 
-                # Filtra só CVEs que tocam targets Linux
+                # Filters only the CVEs that affect Linux targets
                 if not any(is_linux_cpe(cpe) for cpe in cpe_list):
                     continue
 
-                # ─── description ───────────────────────────────────────────
+                # ─── Description ───────────────────────────────────────────
                 descs = cve_data.get("descriptions", [])
                 description = next((d["value"] for d in descs if d.get("lang") == "en"), "")
 
-                # ─── severity / CVSS ───────────────────────────────────────
+                # ─── Severity / CVSS ───────────────────────────────────────
                 cvss_data = {}
-                # Preferir cvssMetricV31 do NVD se existir
+                # Choose cvssMetricV31 as preference (if it exists)
                 for k, lst in cve_data.get("metrics", {}).items():
                     if k.startswith("cvssMetricV31") and lst:
                         for entry in lst:
@@ -137,7 +135,7 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
                         if cvss_data:
                             break
                 else:
-                    # fallback: pega o primeiro cvssMetric disponível
+                    # Fallback: Gets the first available cvssMetric
                     for k, lst in cve_data.get("metrics", {}).items():
                         if k.startswith("cvssMetric") and lst:
                             cvss_data = lst[0].get("cvssData", {})
@@ -172,12 +170,12 @@ def fetch_cves_for_package(start_date: datetime, end_date: datetime):
 
 
 
-# ──────────────────────────────────
-#  (Opcional) – dump simples p/ TXT
-# ──────────────────────────────────
+# ──────────────────────────────────────────────
+#  (Optional) – Write extracted data to file
+# ──────────────────────────────────────────────
 
 def write_to_file(cve_list, output_file):
-    """Grava as CVEs num ficheiro de texto human‑readable (debug/log)."""
+    """Stores the extracted CVEs in a human-readable file"""
     with open(output_file, "w", encoding="utf‑8") as fh:
         for cve in cve_list:
             fh.write(f"CVE ID: {cve['id']}\n")
@@ -190,7 +188,6 @@ def write_to_file(cve_list, output_file):
             fh.write(f"  ‑ Vector:       {sev.get('cvssCode')}\n")
             fh.write("CPEs:\n")
             for c in cve["cpe"]:
-                # Adaptado para imprimir os intervalos de versão corretamente
                 intervals = c['version_intervals']
                 if not intervals:
                     version_str = "no version info"
@@ -209,7 +206,7 @@ def write_to_file(cve_list, output_file):
                 fh.write(f"  ‑ {r.get('url')}\n")
             fh.write("\n" + "‑" * 60 + "\n\n")
 
-
+# Main function to test the extraction of the CVEs
 if __name__ == "__main__":
     start_date = datetime(2020, 1, 1)
     end_date = datetime(2025, 12, 31)

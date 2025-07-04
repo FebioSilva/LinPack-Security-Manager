@@ -3,6 +3,7 @@ import nvdExtraction
 import dbOperations
 import nvdToRDF
 
+# Main function to extract vulnerabilities and insert them into the database
 if __name__ == "__main__":
     start_date = datetime(2020, 1, 1)
     # start_date = datetime.now() - timedelta(days=119)
@@ -16,15 +17,15 @@ if __name__ == "__main__":
         print(cve)
         print("*****************************************")
 
-        # Usa a função otimizada com múltiplos blocos
+        # Uses the optimized function with several blocks
         sparql_blocks = nvdToRDF.cve_object_to_sparql(cve)
 
-        # Exporta o CVE específico se for o que procuras
+        # Exports the specific CVE if its the searched one
         if cve["id"] == "CVE-2025-33138":
             with open("CVE-2025-33138.sparql", "w", encoding="utf-8") as writer:
                 writer.write("\n\n".join(sparql_blocks))
 
-        # Insere cada bloco no endpoint Virtuoso
+        # Inserts each block into the Virtuoso endpoint
         for sparql_block in sparql_blocks:
             dbOperations.insert_into_graph(sparql_block)
 

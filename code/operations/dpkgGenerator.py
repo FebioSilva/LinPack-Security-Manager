@@ -50,15 +50,13 @@ actions = {
 }
 
 # Generate version numbers
-
-
 def generate_version():
     major = random.randint(1, 5)
     minor = random.randint(0, 20)
     patch = random.randint(0, 100)
     return f"{major}.{minor}.{patch}"
 
-
+# Generate random ubuntu version
 def generate_ubuntu_version():
     return f"{random.randint(1, 5)}.{random.randint(0, 20)}.{random.randint(0, 100)}-0ubuntu{random.randint(1, 5)}~{random.choice(['focal', 'bionic', 'disco'])}"
 
@@ -96,17 +94,10 @@ def generate_action_sequence(action, package, arch, base_time):
 
     return logs
 
-# Generate synthetic logs similar to the example
-
-
+# Generate synthetic logs
 def generate_synthetic_logs(count=20):
     logs = []
     base_time = datetime.now()
-
-    # Add some initial comments like in the example
-    logs.append("#")
-    logs.append("# History of some package")
-    logs.append("#")
 
     for _ in range(count):
         action = random.choice(list(actions.keys()))
@@ -114,7 +105,7 @@ def generate_synthetic_logs(count=20):
         logs.extend(generate_action_sequence(
             action, package, package[1], base_time))
 
-    with open("dpkg_synthetic.log", "w") as f:
+    with open("../../resources/dpkg_synthetic.log", "w") as f:
         f.write("\n".join(logs))
         f.write("\n")
     return

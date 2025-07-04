@@ -1,14 +1,20 @@
+
+/**
+ * Render statistics for the system, including the top critical CVEs and a bubble chart of vulnerability counts
+ *
+ * @param {[]} topCriticalCVEs - The top critical CVEs to display.
+ * @param {[]} vulnerabilityCount - The count of vulnerabilities to display.
+ * @returns {void}
+ */
 export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
   const container = document.getElementById("stats-view");
-  container.innerHTML = ""; // Clear stats
+  container.innerHTML = "";
 
-  // Title
   const statsTitle = document.createElement("h1");
   statsTitle.textContent = "System Statistics";
   statsTitle.setAttribute("style", "text-align: center");
   container.appendChild(statsTitle);
 
-  // Top 5 CVEs Div
   const topCVEsDiv = document.createElement("div");
   topCVEsDiv.id = "top-cves";
   const topCVEsDivStyle = "padding: 20px;margin: 20px;background-color: white;border: 1px solid black;border-radius: 8px;box-shadow: 0 2px 4px rgba(0,0,0,0.05)";
@@ -41,7 +47,6 @@ export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
   topCVEsDiv.appendChild(ul);
   container.appendChild(topCVEsDiv);
 
-  // Bubble Chart Div
   const countDiv = document.createElement("div");
   countDiv.id = "count-cves-on-products";
   const countDivStyle = "padding: 20px;margin: 20px;background-color: white;border: 1px solid black;border-radius: 8px;box-shadow: 0 2px 4px rgba(0,0,0,0.05)";
@@ -54,7 +59,6 @@ export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
 
   container.appendChild(countDiv);
 
-  // Medir largura e altura do container para o SVG (esperar que esteja no DOM)
   requestAnimationFrame(() => {
     const bounds = countDiv.getBoundingClientRect();
     const bubbleChartWidth = bounds.width || 600;
@@ -98,7 +102,7 @@ export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
       .attr("transform", d => `translate(${d.x + xOffset},${d.y + yOffset})`);
 
     node.append("circle")
-      .attr("r", d => Math.max(2, d.r - 2)) // <== r mínimo 2 para garantir visibilidade
+      .attr("r", d => Math.max(2, d.r - 2)) 
       .attr("fill", d => colorScale(d.numCVEs || 0))
       .attr("stroke", "#333")
       .attr("stroke-width", 1)
@@ -121,7 +125,6 @@ export function renderStatistics(topCriticalCVEs, vulnerabilityCount) {
       .attr("fill", d => d.color)
       .text(d => d.text);
 
-    // Zoom e drag no container todo
     const zoom = d3.zoom()
       .scaleExtent([0.1, 4])
       .on("zoom", event => {

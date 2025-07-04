@@ -6,16 +6,20 @@ import { processTopCVEsData,fetchDataFromSPARQLEndPoint, logsAndCVEs, generateCV
 } from '../js/process-data-from-sparql.js';
 import sleep from 'sleep-promise';
 
-// Declara abortController UMA vez no topo do arquivo
+// Declares a global variable to manage fetch aborts
+// This allows us to cancel previous fetch requests when switching views
 let abortController = null;
 
-// Mostra ou esconde spinner
+// Show/Hide spinner
 function showSpinner(show) {
   const spinner = document.getElementById("loading-spinner");
   spinner.style.display = show ? "block" : "none";
 }
 
-// Atualiza visibilidade dos controles, ex: filtro ano só em 'graph'
+/**
+ * Update the visibility of controls based on the current view.
+ * @param {} view - The current view (e.g., "graph" or "stats")
+ */
 function updateControlsVisibility(view) {
   const yearFilter = document.getElementById("yearFilter");
   if (yearFilter) {
@@ -23,7 +27,16 @@ function updateControlsVisibility(view) {
   }
 }
 
-// Função principal de carregar e renderizar a vista
+/**
+ * Load and render the specified view for a given year, 
+ * fetching data from the SPARQL endpoint.
+ * This function handles both the graph and statistics views,
+ * and manages the fetch requests with an AbortController
+ * to cancel previous requests when switching views.
+ * @param {string} view - The current view (e.g., "graph" or "stats")
+ * @param {number} year - The year to filter data
+ * @return {Promise<void>}
+ */
 async function loadAndRenderView(view, year) {
   if (abortController) {
     abortController.abort(); // cancela fetch anterior
@@ -38,7 +51,7 @@ async function loadAndRenderView(view, year) {
   svg.selectAll("*").remove();
   statsView.html("");
 
-  // Controla visibilidade do stats-view e svg conforme vista
+  // Controls visibility of the SVG and stats view based on the selected view
   if (view === "stats") {
     statsView.style("display", "block");
     svg.style("display", "none");
@@ -51,8 +64,6 @@ async function loadAndRenderView(view, year) {
     if (view === "graph") {
       const queryCVEToUse = generateCVEQueryByYear(year);
       const cveData = await fetchAllDataWithPagination(queryCVEToUse, signal);
-      //const logGraph = processLogDataToGraph(logData);
-      //console.log("Log graph processed:", logGraph);
       const cveGraph = processCVEAndLogDataToGraph(cveData);
       console.log("CVE graph processed:", cveGraph)
       const { nodes, links } = cveGraph;
@@ -66,9 +77,9 @@ async function loadAndRenderView(view, year) {
     }
   } catch (err) {
     if (err.name === "AbortError") {
-      console.log("Fetch abortado devido a troca de vista");
+      console.log("Fetch request aborted for view:", view);
     } else {
-      console.error("Erro ao carregar dados para view:", view, err);
+      console.error("Error loading data for view:", view, err);
     }
   } finally {
     if (!signal.aborted) {
@@ -77,12 +88,21 @@ async function loadAndRenderView(view, year) {
   }
 }
 
+/**
+ * Update the visibility of the new vulnerable logs block based on the log count.
+ * @param {number} logCount - The count of new vulnerable logs.
+ */
 function changeNewVulnerableLogsBlockVisibility(logCount) {
   const newVulnerableLogsBlock = document.getElementById("newVulnerableLogsBlock");
   if (newVulnerableLogsBlock) {
     newVulnerableLogsBlock.style.display = logCount > 0 ? "block" : "none";
   }
 }
+
+/**
+ * Dismiss the notification block for new vulnerable logs.
+ * This function hides the block when the dismiss button is clicked.
+ */
 
 function dismissNotification() {
   const block = document.getElementById("newVulnerableLogsBlock");
@@ -91,17 +111,18 @@ function dismissNotification() {
   }
 }
 
+/**
+ * Get the local timestamp adjusted for the user's timezone.
+ * @returns {number} - The local timestamp in milliseconds.
+ */
 function getLocalTimestamp() {
     const now = new Date();
-    // getTimezoneOffset retorna minutos de diferença local para UTC (ex: -60 para UTC+1)
     const offsetMinutes = now.getTimezoneOffset();
-    // Ajusta o timestamp UTC para local subtraindo offset em milissegundos
     return now.getTime() - offsetMinutes * 60 * 1000;
   }
 
 
 async function main() {
-  // Espera o DOM estar carregado
   document.addEventListener("DOMContentLoaded", async () => {
     const viewSelect = document.getElementById("viewSelect");
     const yearSelect = document.getElementById("yearSelect");
@@ -129,9 +150,7 @@ async function main() {
     });
 
     dismissBtn?.addEventListener("click", () => {
-      if (notificationBlock) {
-        notificationBlock.style.display = "none";
-      }
+      dismissNotification();
     });
 
     refreshBtn?.addEventListener("click", () => {
@@ -146,7 +165,7 @@ async function main() {
 
 
   let lastTime = getLocalTimestamp();
-
+  // This loop checks for new vulnerable logs every 2 minutes
   while (true) {
     const logCount = await getMostRecentLogData(lastTime);
     if (logCount > 0) {
@@ -154,9 +173,8 @@ async function main() {
       console.log(`Novos logs vulneráveis detectados: ${logCount}`);
     }
     lastTime = getLocalTimestamp();
-    await sleep(5000); // 5 seconds
+    await sleep(120000); // 2 minutes
   }
 }
-
 
 main();

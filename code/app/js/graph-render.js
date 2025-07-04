@@ -1,5 +1,10 @@
+/**
+ * Render a graph using D3.js, displaying nodes and links
+ * @param {Array} nodes - The nodes to display in the graph
+ * @param {Array} links - The links between the nodes
+ */
+
 export function renderGraph(nodes, links) {
-  // ╭──────────────────────────  setup básico  ──────────────────────────╮
   document.getElementById("stats-view").innerHTML = "";
   const svg = d3.select("svg");
   const W = window.innerWidth;
@@ -12,7 +17,6 @@ export function renderGraph(nodes, links) {
     d3.zoom().scaleExtent([0.1, 4]).on("zoom", e => graphGroup.attr("transform", e.transform))
   ).call(d3.zoom().transform, d3.zoomIdentity);
 
-  // ╭──────────────────────────  estrutura de dados  ────────────────────╮
   const nodesMap = new Map(nodes.map(n => [n.id, { ...n, children: [], collapsed: true }]));
 
   links.forEach(l => {
@@ -28,7 +32,6 @@ export function renderGraph(nodes, links) {
   const topRoots = Array.from(nodesMap.values())
     .filter(n => n.type === "Product" || n.type.endsWith("Event"));
 
-  // posição inicial aleatória + fallback de segurança
   nodesMap.forEach(n => {
     n.x = Math.random() * W * 0.8 + W * 0.1;
     n.y = Math.random() * H * 0.8 + H * 0.1;
@@ -36,7 +39,6 @@ export function renderGraph(nodes, links) {
     if (typeof n.y !== "number" || isNaN(n.y)) n.y = H / 2;
   });
 
-  // ╭──────────────────────────  simulação forças  ──────────────────────╮
   let nodesMerged, linksMerged;
   const simulation = d3.forceSimulation()
     .force("link", d3.forceLink().id(d => d.id).distance(120))
@@ -49,12 +51,25 @@ export function renderGraph(nodes, links) {
   const visibleNodes = [];
   const visibleLinks = [];
 
+  /**
+   * Collect visible nodes recursively, starting from the top-level roots.
+   * This function traverses the graph structure,
+   * adding nodes to the visibleNodes array if they are not collapsed.
+   * @param {Object} node - The current node to check for visibility
+   * @return {void}
+   * */
   function collectVisible(node) {
     visibleNodes.push(node);
     if (!node.collapsed && node.children.length)
       node.children.forEach(collectVisible);
   }
-
+  
+  /**
+   * Update the graph by recalculating visible nodes and links,
+   * and applying the force simulation.
+   * This function is called whenever the graph needs to be redrawn,
+   * for example, when nodes are expanded or collapsed.
+   */
   function update() {
     visibleNodes.length = 0;
     visibleLinks.length = 0;
@@ -191,7 +206,11 @@ export function renderGraph(nodes, links) {
       })
       .on("mouseout", () => tooltip.style("display", "none"));
   }
-
+  
+  /**
+   * Updates the positions of links and nodes during the simulation tick.
+   * This function is called repeatedly by the D3 force simulation.
+   */
   function ticked() {
     linksMerged
       .attr("x1", d => (typeof d.source === "object" ? d.source.x : nodesMap.get(d.source)?.x || 0))

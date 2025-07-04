@@ -1,3 +1,8 @@
+/**
+ * Render a bubble chart using D3.js, 
+ * @param {*} data - The data to display in the bubble chart
+ * @returns {void}
+ */
 export function renderBubbleChart(data) {
   document.getElementById("stats-view").innerHTML = ""; // Clear stats
   const svg = d3.select("svg");
@@ -38,7 +43,7 @@ export function renderBubbleChart(data) {
     .attr("fill", d => colorScale(d.numCVEs))
     .attr("stroke", "#333")
     .attr("stroke-width", 1)
-    .style("cursor", "default");  // cursor normal, sem drag
+    .style("cursor", "default");
 
   node.append("text")
     .attr("class", "bubble-label")
@@ -57,7 +62,6 @@ export function renderBubbleChart(data) {
     .attr("fill", d => d.color)
     .text(d => d.text);
 
-  // Apenas zoom e drag no container (mapa todo)
   const zoom = d3.zoom()
     .scaleExtent([0.1, 4])
     .on("zoom", event => {

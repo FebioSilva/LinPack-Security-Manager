@@ -1,193 +1,7 @@
 import compareVersions from 'dpkg-compare-versions';
-
-export const highestSeverityCVEsQuery = `
-PREFIX cve:     <http://purl.org/cyber/cve#>
-PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
-PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX linpack: <http://www.semanticweb.org/linpack/>
-
-SELECT DISTINCT
-  ?cve
-  ?base_score
-  ?base_severity
-  ?cvss_version
-  ?cvss_code
-  ?package_name
-  ?package_version
-   ?min ?max
-WHERE {
-  ?package a logs:Package ;
-           logs:installed true ;
-           logs:version              ?package_version ;
-           logs:package_name ?package_name;
-           linpack:has_related_product ?product .
-
-  ?product a cve:Product ;
-           cve:product_name ?product_name ;
-           cve:has_version_interval ?version_interval .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve ;
-                    cve:has_product ?product .
-
-  OPTIONAL { ?version_interval cve:min ?min . }
-  OPTIONAL { ?version_interval cve:max ?max . }
-  ?cve a cve:CVE ;
-       cve:base_score ?base_score ;
-       cve:base_severity ?base_severity ;
-       cve:cvss_version ?cvss_version ;
-       cve:cvss_code ?cvss_code .
-
-}
-ORDER BY DESC(?base_score)
-`
-export const countCVEsPerProductQuery = `PREFIX cve:     <http://purl.org/cyber/cve#>
-PREFIX linpack: <http://www.semanticweb.org/linpack/>
-PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
-PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-SELECT  ?version_interval ?min ?max (COUNT(DISTINCT ?cve) AS ?cve_count) ?product ?product_name ?package_name ?package_version
-WHERE {
-  ?package a logs:Package ;
-           logs:package_name         ?package_name ;
-           logs:version              ?package_version ;
-           logs:installed true ;
-           linpack:has_related_product ?product .
-
-  ?product a cve:Product ;
-           cve:product_name   ?product_name ;
-           cve:has_version_interval ?version_interval .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_cve_affecting_product ?cve .
-
-  OPTIONAL { ?version_interval cve:min ?min . }
-  OPTIONAL { ?version_interval cve:max ?max . }
-}
-GROUP BY ?version_interval ?min ?max ?product ?product_name ?package_name ?package_version
-ORDER BY DESC(?cve_count)
-`
-
-export const logsAndCVEs = (year) => `
-PREFIX cve:     <http://purl.org/cyber/cve#>
-PREFIX linpack: <http://www.semanticweb.org/linpack/>
-PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
-PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
-
-SELECT DISTINCT
-       ?cve ?description ?cvss_version ?base_score ?base_severity ?cvss_code ?pub_date
-
-       ?product ?product_name
-       ?vendor  ?vendor_name
-
-       ?version_interval ?min ?max
-
-       ?package  ?package_name ?package_version ?package_architecture
-       ?log      ?event_type   ?timestamp ?action ?state ?decision ?command
-WHERE {
-  #######################################################################
-  ## CVE                                                               ##
-  #######################################################################
-  ?cve  a                     cve:CVE ;
-        cve:description       ?description ;
-        cve:cvss_version      ?cvss_version ;
-        cve:base_score        ?base_score ;
-        cve:base_severity     ?base_severity ;
-        cve:cvss_code         ?cvss_code ;
-        cve:pub_date          ?pub_date ;
-        cve:has_affected_product ?product ;
-        cve:has_references ?reference .
-
-  ${year ? `FILTER(STRSTARTS(STR(?pub_date), "${year}"))` : ""}
-
-  #######################################################################
-  ## Produto + Vendor + versão afeta                                  ##
-  #######################################################################
-  ?product a                  cve:Product ;
-           cve:product_name   ?product_name ;
-           cve:has_vendor     ?vendor .
-
-  ?vendor  a                  cve:Vendor ;
-           cve:vendor_name    ?vendor_name .
-
-  ?version_interval a cve:Versions ;
-                    cve:has_product ?product ;
-                    cve:has_cve_affecting_product ?cve .
-
-  OPTIONAL { ?version_interval cve:min ?min . }
-  OPTIONAL { ?version_interval cve:max ?max . }
-
-  #######################################################################
-  ## Pacotes do sistema + ligação ao produto via nome                 ##
-  #######################################################################
-  ?package a logs:Package ;
-           logs:package_name         ?package_name ;
-           logs:version              ?package_version ;
-           logs:package_architecture ?package_architecture ;
-           logs:installed            True ;
-           linpack:has_related_product ?product .
+import { countNewVulnerableLogsQuery } from './queries.js';
 
 
-  #######################################################################
-  ## Eventos de log relacionados (opcional)                           ##
-  #######################################################################
-  OPTIONAL {
-    ?log logs:has_package ?package ;
-         rdf:type          ?event_type ;
-         logs:timestamp_epoch    ?timestamp.
-  }
-  OPTIONAL { ?log logs:action ?action . }
-  OPTIONAL { ?log logs:state ?state . }
-  OPTIONAL { ?log logs:decision ?decision . }
-  OPTIONAL { ?log logs:command ?command . }
-}
-`
-
-
-export function generateCVEQueryByYear(year) {
-  console.log("Generating CVE query for year:", year);
-  if (year === "all") {
-    return logsAndCVEs(); 
-  } else if (year && year.length === 4) {
-    return logsAndCVEs(year);
-  } else {
-    throw new Error("Invalid year value");
-  }
-}
-
-const countNewVulnerableLogsQuery = (lastTimeStamp) => `
-PREFIX cve:     <http://purl.org/cyber/cve#>
-PREFIX logs:    <http://www.semanticweb.org/logs-ontology-v2/>
-PREFIX xsd:     <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX linpack: <http://www.semanticweb.org/linpack/>
-
-SELECT (COUNT(DISTINCT ?log) AS ?logCount)
-WHERE {
-  # Pacotes instalados
-  ?package a logs:Package ;
-           logs:installed true ;
-           logs:package_name ?package_name ;
-           linpack:has_related_product ?product .
-
-  # Produtos com nome igual ao do pacote
-  ?product a cve:Product ;
-           cve:product_name ?product_name ;
-           cve:has_version_interval ?vi .
-
-  # Versões afetadas e ligação ao CVE
-  ?vi a cve:Versions ;
-      cve:has_product ?product ;
-      cve:has_cve_affecting_product ?cve .
-
-  # Evento de log associado ao pacote
-  ?log logs:has_package ?package ;
-       logs:timestamp_epoch ?timestamp .
-
-  # Filtro por timestamp (substituir pela data desejada)
-  FILTER(?timestamp > ${lastTimeStamp})
-}`
 /**
   * Fetch data from SPARQL endpoint
   * @param {string} query - The SPARQL query to execute
@@ -214,7 +28,13 @@ export async function fetchDataFromSPARQLEndPoint(query, signal) {
   return data.results.bindings;
 }
 
-
+/**
+ * Fetch all data with pagination, allowing to handle large datasets
+ * @param {string} baseQuery - The base SPARQL query to execute
+ * @param {AbortSignal} signal - An AbortSignal to cancel the request
+ * @param {number} limit - The maximum number of results to fetch per request
+ * @returns {Promise<Array>} - A promise that resolves to an array of all fetched results in JSON format
+ */
 export async function fetchAllDataWithPagination(baseQuery, signal, limit = 10000) {
   let offset = 0;
   let allResults = [];
@@ -248,9 +68,21 @@ function extractLocalName(uri) {
   return uri.substring(Math.max(hashIndex, slashIndex) + 1);
 }
 
+/** * Check if a version string is valid
+ * @param {string} v - The version string to check
+ * @returns {boolean} - True if the version is valid, false otherwise
+ * */
+
 function isValidVersion(v) {
   return typeof v === "string" && /^\d/.test(v);
 }
+
+/** * Check if a version is within a specified range using dpkg-compare-versions library
+ * @param {string} version - The version to check
+ * @param {string|null} min - The minimum version (inclusive)
+ * @param {string|null} max - The maximum version (inclusive)
+ * @returns {boolean} - True if the version is within the range, false otherwise
+ */
 
 export function versionInRange(version, min, max) {
   if (!version || !isValidVersion(version)) return false;
@@ -267,6 +99,12 @@ export function versionInRange(version, min, max) {
   return true;
 }
 
+/**
+ * Process CVE and log data to create a graph structure. Basically, it creates nodes for CVEs, products, versions, packages, 
+ * and logs, and links them based on their relationships.
+ * @param {Array} bindings - The SPARQL query results to process
+ * @returns {Object} - An object containing a list of nodes and links representing the graph structure
+ * */ 
 
 export function processCVEAndLogDataToGraph(bindings) {
   const nodesMap = new Map();
@@ -275,7 +113,7 @@ export function processCVEAndLogDataToGraph(bindings) {
   const seenVersions = new Set();
 
   function debugLog(...args) {
-    // console.log(...args); // Ative para debug
+    // console.log(...args); // Uncomment for debugging
   }
 
   bindings.forEach(entry => {
@@ -302,13 +140,12 @@ export function processCVEAndLogDataToGraph(bindings) {
     const pkgVersion = entry.package_version?.value;
     const pkgArch = entry.package_architecture?.value;
 
-    // ** FILTRO PRINCIPAL: Só processa se pkgVersion estiver no intervalo [min, max] **
+    // Verifies if the package version is valid, if not, skip this entry
     if (!versionInRange(pkgVersion, min, max)) {
-      debugLog(`Ignorando pacote ${pkgName} versão ${pkgVersion} fora do intervalo [${min}, ${max}]`);
-      return; // Ignora essa entrada completamente, não cria nodes nem links
+      debugLog(`Ignoring package ${pkgName} version ${pkgVersion} out of range [${min}, ${max}]`);
+      return;
     }
 
-    // Cria CVE node (se não existir)
     if (!nodesMap.has(cveId)) {
       nodesMap.set(cveId, {
         id: cveId,
@@ -323,7 +160,6 @@ export function processCVEAndLogDataToGraph(bindings) {
       });
     }
 
-    // Cria Product node (se não existir)
     if (productId && !nodesMap.has(productId)) {
       nodesMap.set(productId, {
         id: productId,
@@ -334,7 +170,6 @@ export function processCVEAndLogDataToGraph(bindings) {
       });
     }
 
-    // Link CVE -> Product
     if (productId) {
       const cveProductKey = `${cveId}->${productId}`;
       if (!seenLinks.has(cveProductKey)) {
@@ -344,7 +179,6 @@ export function processCVEAndLogDataToGraph(bindings) {
       }
     }
 
-    // --- Version node e links relacionados ---
     if (versionId && !seenVersions.has(versionId)) {
       nodesMap.set(versionId, {
         id: versionId,
@@ -356,9 +190,9 @@ export function processCVEAndLogDataToGraph(bindings) {
       seenVersions.add(versionId);
     }
 
-    // --- Link produto -> versão só da entrada atual ---
     if (productId && versionId) {
-      // Só cria link se o pacote que está nessa entrada estiver no range (para garantir coerência)
+      // Only link if the version is within the specified range
+      // This avoids creating links for versions that are not relevant to the product
       if (versionInRange(pkgVersion, min, max)) {
         const productVersionKey = `${productId}->${versionId}`;
         if (!seenLinks.has(productVersionKey)) {
@@ -368,8 +202,6 @@ export function processCVEAndLogDataToGraph(bindings) {
       }
     }
 
-
-    // Link Version -> CVE
     if (versionId) {
       const versionCVEKey = `${versionId}->${cveId}`;
       if (!seenLinks.has(versionCVEKey)) {
@@ -379,10 +211,8 @@ export function processCVEAndLogDataToGraph(bindings) {
       }
     }
 
-    // --- Package node ---
     if (pkgUri && pkgName && pkgVersion && pkgArch) {
       const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
-
       if (!nodesMap.has(pkgId)) {
         nodesMap.set(pkgId, {
           id: pkgId,
@@ -395,7 +225,6 @@ export function processCVEAndLogDataToGraph(bindings) {
         });
       }
 
-      // Link Package -> Version
       if (versionId) {
         const pkgVersionKey = `${pkgId}->${versionId}`;
         if (!seenLinks.has(pkgVersionKey)) {
@@ -405,8 +234,6 @@ export function processCVEAndLogDataToGraph(bindings) {
         }
       }
 
-
-      // Link Package -> Product
       if (productId) {
         const pkgProductKey = `${pkgId}->${productId}`;
         if (!seenLinks.has(pkgProductKey)) {
@@ -417,7 +244,6 @@ export function processCVEAndLogDataToGraph(bindings) {
       }
     }
 
-    // --- Log node ---
     const logUri = entry.log?.value;
     if (logUri) {
       const logId = extractLocalName(logUri);
@@ -433,7 +259,6 @@ export function processCVEAndLogDataToGraph(bindings) {
         });
       }
 
-      // Link Log -> Package
       if (pkgName && pkgVersion && pkgArch) {
         const pkgId = `${pkgName}-${pkgVersion}-${pkgArch}`;
         const logPkgKey = `${logId}->${pkgId}`;
@@ -453,6 +278,11 @@ export function processCVEAndLogDataToGraph(bindings) {
   };
 }
 
+/** * Process the count data to aggregate CVE counts per product
+ * @param {Array} bindings - The SPARQL query results to process
+ * @returns {Array} - An array of objects with product names and total CVE counts
+ */
+
 export function processCountData(bindings) {
   const packageMap = new Map();
 
@@ -465,10 +295,10 @@ export function processCountData(bindings) {
 
     if (!pkgName || !pkgVersion || isNaN(cveCount)) return;
 
-    // Aplica o filtro de intervalo [min, max]
+    // Applies version filtering, if the version is not in range, skip this entry
+    // This ensures we only count CVEs for packages that are within the specified version range
     if (!versionInRange(pkgVersion, min, max)) return;
 
-    // Soma os cve_count para cada pacote
     if (!packageMap.has(pkgName)) {
       packageMap.set(pkgName, 0);
     }
@@ -481,6 +311,10 @@ export function processCountData(bindings) {
   }));
 }
 
+/** * Process the top CVEs data to extract relevant information and return the top 5 CVEs by score
+ * @param {Array} bindings - The SPARQL query results to process 
+ * @return {Object} - An object containing an array of the top 5 CVEs with their details
+ */
 
 export function processTopCVEsData(bindings) {
   const cveList = [];
@@ -510,7 +344,7 @@ export function processTopCVEsData(bindings) {
     });
   });
 
-  // Ordenar por score decrescente e pegar os 5 primeiros
+  // Order by score and take the top 5 CVEs
   const top5 = cveList
     .sort((a, b) => b.score - a.score)
     .slice(0, 5);
@@ -518,29 +352,31 @@ export function processTopCVEsData(bindings) {
   return { cves: top5 };
 }
 
+/** * Merge two graph structures, ensuring no duplicate nodes or links
+ * @param {Object} graph1 - The first graph with nodes and links
+ * @param {Object} graph2 - The second graph with nodes and links
+ * @returns {Object} - A new graph containing merged nodes and links
+ */
+
 export function mergeGraphs(graph1, graph2) {
   const nodeMap = new Map();
-  const linkMap = new Map(); // chave para links com tipo incluído
+  const linkMap = new Map();
 
-  // Adiciona todos os nós do primeiro grafo
   for (const node of graph1.nodes) {
     nodeMap.set(node.id, { ...node });
   }
 
-  // Adiciona nós do segundo grafo, se não existirem
   for (const node of graph2.nodes) {
     if (!nodeMap.has(node.id)) {
       nodeMap.set(node.id, { ...node });
     }
   }
 
-  // Adiciona links do primeiro grafo (com tipo)
   for (const link of graph1.links) {
     const key = `${link.source}->${link.target}->${link.type}`;
     linkMap.set(key, { ...link });
   }
 
-  // Adiciona links do segundo grafo, evitando réplicas (com tipo)
   for (const link of graph2.links) {
     const key = `${link.source}->${link.target}->${link.type}`;
     if (!linkMap.has(key)) {
@@ -554,20 +390,26 @@ export function mergeGraphs(graph1, graph2) {
   };
 }
 
+/**
+ * Process the most recent log data, counting how many new vulnerable logs have been added since the last timestamp.
+ * @param {number} lastTimeStamp - The last timestamp in epoch format to compare against
+ * @returns {Promise<number>} - The count of new vulnerable logs added since the last timestamp
+ */
+
 export async function getMostRecentLogData(lastTimeStamp) {
   if (!lastTimeStamp) {
-    console.error("Timestamp inválido para consulta de logs recentes");
+    console.error("Invalid timeStamp provided:", lastTimeStamp);
     return 0;
   }
 
   const query = countNewVulnerableLogsQuery(lastTimeStamp);
   try {
     const data = await fetchDataFromSPARQLEndPoint(query);
-    console.log("Dados de logs recentes:", data[0].logCount?.value);
+    console.log("Recent log data:", data[0].logCount?.value);
     const logCount = parseInt(data[0]?.logCount?.value || "0", 10);
     return logCount;
   } catch (err) {
-    console.error("Erro ao buscar logs recentes:", err);
+    console.error("Error fetching recent logs:", err);
     return 0;
   }
 }

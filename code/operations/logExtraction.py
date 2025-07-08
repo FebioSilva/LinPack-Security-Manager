@@ -140,8 +140,12 @@ class LogParser:
                     f"Event ID: {entry['log_id']}\nTimestamp: {entry['timestamp']}\nType: {entry['type'].capitalize()}\n")
 
                 if entry["type"] == "action":
-                    file.write(
-                        f"Action: {entry['action']}\nPackage: {entry['package']}\nArchitecture: {entry['architecture']}\nOld Version: {entry['version_old']}\nNew Version: {entry['version_new']}\n")
+                    if entry["action"] == "upgrade":
+                        file.write(
+                            f"Action: {entry['action']}\nPackage: {entry['package']}\nArchitecture: {entry['architecture']}\nOld Version: {entry['replace']}\nNew Version: {entry['version']}\n")
+                    else:
+                        file.write(
+                            f"Action: {entry['action']}\nPackage: {entry['package']}\nArchitecture: {entry['architecture']}\nVersion: {entry['version']}\n")
 
                 elif entry["type"] == "state":
                     file.write(
@@ -153,17 +157,18 @@ class LogParser:
 
                 elif entry["type"] == "startup":
                     file.write(
-                        f"Context: {entry['context']}\nAction: {entry['action']}\n")
+                        f"Context: {entry['context']}\nAction: {entry['command']}\n")
 
                 file.write("\n")  # Add a blank line between entries
 
 
 # Main function to test the extraction of the logs
 if __name__ == "__main__":
-    input_file = "../resources/dpkg.log"
+    input_file = "../../resources/dpkg.log"
 
     parser = LogParser(input_file)
     parser.parse_log()
     parsed_logs = parser.parsed_logs
-    print("Parsed logs:")
-    installed_logs = [log for log in parsed_logs if log["type"] == "action" and log["action"] == "install"]
+    print("Logs have been parsed")
+
+    parser.write_to_file("logs.txt")

@@ -24,7 +24,7 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
-    log_id = f"log{sanitize_for_uri(log_obj['log_id'])}"
+    log_id = f"log_{sanitize_for_uri(log_obj['log_id'])}"
     log_type = log_obj["type"].capitalize() + "Event"
 
     sparql = sparql_prefix + f"""

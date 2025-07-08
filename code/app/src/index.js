@@ -1,9 +1,14 @@
-import { renderBubbleChart } from '../js/bubble-chart-render.js';
 import { renderGraph } from '../js/graph-render.js';
 import { renderStatistics } from '../js/statistics-render.js';
-import { processTopCVEsData,fetchDataFromSPARQLEndPoint, logsAndCVEs, generateCVEQueryByYear, processCVEAndLogDataToGraph, highestSeverityCVEsQuery, countCVEsPerProductQuery,
+import { processTopCVEsData,fetchDataFromSPARQLEndPoint, processCVEAndLogDataToGraph,
   processCountData, fetchAllDataWithPagination, getMostRecentLogData
 } from '../js/process-data-from-sparql.js';
+import {  
+  countCVEsPerProductQuery,
+  highestSeverityCVEsQuery,
+  generateCVEQueryByYear
+ } from '../js/queries.js';
+
 import sleep from 'sleep-promise';
 
 // Declares a global variable to manage fetch aborts
